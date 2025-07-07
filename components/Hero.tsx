@@ -23,7 +23,7 @@ const Hero = () => {
         await font.load();
         document.fonts.add(font);
         setFontLoaded(true);
-      } catch (error) {
+      } catch {
         console.log('Font loading failed, using fallback');
         setFontLoaded(true); // Still show content with fallback
       }
