@@ -1,0 +1,257 @@
+/* TopBar.module.css */
+
+.topBar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  transition: all 0.3s ease;
+  padding: 8px 0;
+  backdrop-filter: blur(10px);
+}
+
+.topBarSticky {
+  top: 0px;
+}
+
+.topBarNormal {
+  top: 40px;
+}
+
+.topBarHovered {
+  background-color: rgba(255, 255, 255, 1);
+}
+
+.topBarDefault {
+  background-color: rgba(0, 0, 0, 0.25);
+}
+
+/* Mobile Header */
+.mobileHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 16px;
+}
+
+.mobileBrand {
+  color: white;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.hamburgerButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  transition: transform 0.3s ease;
+}
+
+.hamburgerRotated {
+  transform: rotate(90deg);
+}
+
+.hamburgerIcon {
+  fill: white;
+}
+
+/* Desktop Menu */
+.desktopMenu {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 40px;
+  flex-direction: row;
+}
+
+.menuItem {
+  text-transform: capitalize;
+  font-size: 16px;
+  text-align: center;
+  padding: 8px 24px;
+  border-radius: 16px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.menuItemActive {
+  font-weight: 600;
+  background-color: #1f2937;
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.menuItemHovered {
+  font-weight: bold;
+  text-decoration: underline;
+  color: black;
+}
+
+.menuItemHoveredContext {
+  color: black;
+}
+
+.menuItemDefault {
+  font-weight: 500;
+  background-color: transparent;
+  color: white;
+}
+
+/* Mobile Menu Overlay */
+.mobileOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
+.mobilePanel {
+  width: 80%;
+  max-width: 320px;
+  height: 100vh;
+  background-color: white;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+  padding-top: 80px;
+}
+
+.mobilePanelVisible {
+  transform: translateX(0);
+}
+
+.mobilePanelHidden {
+  transform: translateX(-100%);
+}
+
+.mobileMenuHeader {
+  padding: 24px 24px 16px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mobileMenuTitle {
+  color: #1f2937;
+  font-size: 18px;
+  font-weight: bold;
+  margin: 0;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  width: 32px;
+  height: 32px;
+}
+
+.closeButton:hover {
+  background-color: #f3f4f6;
+}
+
+.mobileMenuItem {
+  text-transform: capitalize;
+  font-size: 16px;
+  padding: 16px 24px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.mobileMenuItemActive {
+  font-weight: 600;
+  background-color: #1f2937;
+  color: white;
+}
+
+.mobileMenuItemDefault {
+  font-weight: 500;
+  background-color: transparent;
+  color: #374151;
+}
+
+.mobileMenuItem:hover:not(.mobileMenuItemActive) {
+  background-color: #f3f4f6;
+  color: #1f2937;
+}
+
+.mobileMenuItemBorder {
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.menuIcon {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.menuIconActive {
+  background-color: white;
+}
+
+.menuIconDefault {
+  background-color: #6b7280;
+}
+
+.menuArrow {
+  margin-left: auto;
+  color: white;
+  font-size: 14px;
+}
+
+.mobileMenuFooter {
+  padding: 24px;
+  margin-top: 32px;
+  border-top: 1px solid #e5e7eb;
+  background-color: #f8fafc;
+}
+
+.mobileMenuFooterText {
+  color: #6b7280;
+  font-size: 14px;
+  margin: 0;
+  text-align: center;
+}
+
+/* Responsive */
+@media (min-width: 640px) {
+  .mobileHeader {
+    display: none;
+  }
+  
+  .desktopMenu {
+    display: flex;
+  }
+}
+
+@media (max-width: 639px) {
+  .mobileHeader {
+    display: flex;
+  }
+  
+  .desktopMenu {
+    display: none;
+  }
+}

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import styles from './TopBar.module.css';
 
 const menus = [
   { name: "beranda", href: "/" },
@@ -16,17 +17,6 @@ const TopBar = () => {
   const [toggleMenu, setToggleMenu] = useState(false);
   const [isSticky, setIsSticky] = useState(false);
   const [hoveringMenu, setHoveringMenu] = useState<string | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 640);
-    };
-    
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -64,7 +54,7 @@ const TopBar = () => {
   // Close mobile menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (toggleMenu && isMobile) {
+      if (toggleMenu) {
         const target = event.target as Element;
         if (!target.closest('[data-mobile-menu]')) {
           setToggleMenu(false);
@@ -74,11 +64,11 @@ const TopBar = () => {
 
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
-  }, [toggleMenu, isMobile]);
+  }, [toggleMenu]);
 
   // Prevent body scroll when mobile menu is open
   useEffect(() => {
-    if (toggleMenu && isMobile) {
+    if (toggleMenu) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -87,58 +77,30 @@ const TopBar = () => {
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [toggleMenu, isMobile]);
+  }, [toggleMenu]);
 
   return (
     <>
       {/* Main TopBar */}
       <div
         data-mobile-menu
-        style={{
-          position: 'fixed',
-          left: 0,
-          right: 0,
-          top: isSticky ? '0px' : '40px',
-          zIndex: 50,
-          backgroundColor: hoveringMenu ? 'rgba(255, 255, 255, 1)' : 'rgba(0, 0, 0, 0.25)',
-          transition: 'all 0.3s ease',
-          padding: '8px 0',
-          backdropFilter: 'blur(10px)'
-        }}
+        className={`${styles.topBar} ${isSticky ? styles.topBarSticky : styles.topBarNormal} ${hoveringMenu ? styles.topBarHovered : styles.topBarDefault}`}
       >
         {/* Mobile Menu Button */}
-        <div
-          style={{
-            display: isMobile ? 'flex' : 'none',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '0 16px'
-          }}
-        >
-          <div style={{
-            color: 'white',
-            fontWeight: 'bold',
-            fontSize: '18px'
-          }}>
+        <div className={styles.mobileHeader}>
+          <div className={styles.mobileBrand}>
             Dusun Kalibulus
           </div>
           
           <button
             onClick={() => setToggleMenu(!toggleMenu)}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '8px',
-              transform: toggleMenu ? 'rotate(90deg)' : 'rotate(0deg)',
-              transition: 'transform 0.3s ease'
-            }}
+            className={`${styles.hamburgerButton} ${toggleMenu ? styles.hamburgerRotated : ''}`}
           >
             <svg
               width="24"
               height="24"
               viewBox="0 0 246.42 246.04"
-              style={{ fill: 'white' }}
+              className={styles.hamburgerIcon}
             >
               <rect x="0.79" y="30.22" width="245.63" height="23.36" rx="11.68" />
               <rect x="0.39" y="111.32" width="245.63" height="23.36" rx="11.68" />
@@ -148,15 +110,7 @@ const TopBar = () => {
         </div>
 
         {/* Desktop Menu */}
-        <div
-          style={{
-            display: !isMobile ? 'flex' : 'none',
-            justifyContent: 'center',
-            alignItems: 'center',
-            gap: '40px',
-            flexDirection: 'row'
-          }}
-        >
+        <div className={styles.desktopMenu}>
           {menus.map((menu, i) => (
             <Link 
               key={i} 
@@ -166,26 +120,15 @@ const TopBar = () => {
               <div
                 onMouseEnter={() => setHoveringMenu(menu.name)}
                 onMouseLeave={() => setHoveringMenu(null)}
-                style={{
-                  textTransform: 'capitalize',
-                  fontSize: '16px',
-                  fontWeight: activeSection === menu.name ? '600' : (hoveringMenu === menu.name ? 'bold' : '500'),
-                  textAlign: 'center',
-                  padding: '8px 24px',
-                  borderRadius: '16px',
-                  transition: 'all 0.2s ease',
-                  cursor: 'pointer',
-                  textDecoration: hoveringMenu === menu.name ? 'underline' : 'none',
-                  backgroundColor: activeSection === menu.name ? '#1f2937' : 'transparent',
-                  color: activeSection === menu.name 
-                    ? 'white' 
+                className={`${styles.menuItem} ${
+                  activeSection === menu.name 
+                    ? styles.menuItemActive 
                     : hoveringMenu === menu.name 
-                      ? 'black' 
+                      ? styles.menuItemHovered 
                       : hoveringMenu 
-                        ? 'black' 
-                        : 'white',
-                  boxShadow: activeSection === menu.name ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none'
-                }}
+                        ? styles.menuItemHoveredContext 
+                        : styles.menuItemDefault
+                }`}
               >
                 {menu.name}
               </div>
@@ -195,77 +138,23 @@ const TopBar = () => {
       </div>
 
       {/* Mobile Menu Overlay */}
-      {toggleMenu && isMobile && (
+      {toggleMenu && (
         <div
           data-mobile-menu
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 60,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            display: 'flex',
-            justifyContent: 'flex-start',
-            alignItems: 'flex-start'
-          }}
+          className={styles.mobileOverlay}
         >
           {/* Mobile Menu Panel */}
-          <div
-            style={{
-              width: '80%',
-              maxWidth: '320px',
-              height: '100vh',
-              backgroundColor: 'white',
-              boxShadow: '4px 0 20px rgba(0, 0, 0, 0.15)',
-              transform: toggleMenu ? 'translateX(0)' : 'translateX(-100%)',
-              transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              overflowY: 'auto',
-              paddingTop: '80px'
-            }}
-          >
+          <div className={`${styles.mobilePanel} ${toggleMenu ? styles.mobilePanelVisible : styles.mobilePanelHidden}`}>
             {/* Menu Header */}
-            <div style={{
-              padding: '24px 24px 16px 24px',
-              borderBottom: '1px solid #e5e7eb',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
-            }}>
-              <h3 style={{
-                color: '#1f2937',
-                fontSize: '18px',
-                fontWeight: 'bold',
-                margin: 0
-              }}>
+            <div className={styles.mobileMenuHeader}>
+              <h3 className={styles.mobileMenuTitle}>
                 Menu Navigasi
               </h3>
               
               {/* Close Button */}
               <button
                 onClick={() => setToggleMenu(false)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '8px',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s ease',
-                  width: '32px',
-                  height: '32px'
-                }}
-                onMouseEnter={(e) => {
-                  const target = e.target as HTMLElement;
-                  target.style.backgroundColor = '#f3f4f6';
-                }}
-                onMouseLeave={(e) => {
-                  const target = e.target as HTMLElement;
-                  target.style.backgroundColor = 'transparent';
-                }}
+                className={styles.closeButton}
               >
                 <svg
                   width="16"
@@ -288,78 +177,34 @@ const TopBar = () => {
               <Link 
                 key={i} 
                 href={menu.href}
-                style={{ textDecoration: 'none' }}
+                className={`${styles.mobileMenuItem} ${
+                  activeSection === menu.name 
+                    ? styles.mobileMenuItemActive 
+                    : styles.mobileMenuItemDefault
+                } ${i < menus.length - 1 ? styles.mobileMenuItemBorder : ''}`}
+                onClick={() => setToggleMenu(false)}
               >
-                <div
-                  onClick={() => setToggleMenu(false)}
-                  onMouseEnter={(e) => {
-                    const target = e.target as HTMLElement;
-                    if (activeSection !== menu.name) {
-                      target.style.backgroundColor = '#f3f4f6';
-                      target.style.color = '#1f2937';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    const target = e.target as HTMLElement;
-                    if (activeSection !== menu.name) {
-                      target.style.backgroundColor = 'transparent';
-                      target.style.color = '#374151';
-                    }
-                  }}
-                  style={{
-                    textTransform: 'capitalize',
-                    fontSize: '16px',
-                    fontWeight: activeSection === menu.name ? '600' : '500',
-                    padding: '16px 24px',
-                    cursor: 'pointer',
-                    borderBottom: i < menus.length - 1 ? '1px solid #f3f4f6' : 'none',
-                    backgroundColor: activeSection === menu.name ? '#1f2937' : 'transparent',
-                    color: activeSection === menu.name ? 'white' : '#374151',
-                    transition: 'all 0.2s ease',
-                    position: 'relative',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px'
-                  }}
-                >
-                  {/* Menu Icon */}
-                  <div style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    backgroundColor: activeSection === menu.name ? 'white' : '#6b7280',
-                    transition: 'all 0.2s ease'
-                  }} />
-                  
-                  {menu.name}
-                  
-                  {/* Arrow for active menu */}
-                  {activeSection === menu.name && (
-                    <div style={{
-                      marginLeft: 'auto',
-                      color: 'white',
-                      fontSize: '14px'
-                    }}>
-                      →
-                    </div>
-                  )}
-                </div>
+                {/* Menu Icon */}
+                <div className={`${styles.menuIcon} ${
+                  activeSection === menu.name 
+                    ? styles.menuIconActive 
+                    : styles.menuIconDefault
+                }`} />
+                
+                {menu.name}
+                
+                {/* Arrow for active menu */}
+                {activeSection === menu.name && (
+                  <div className={styles.menuArrow}>
+                    →
+                  </div>
+                )}
               </Link>
             ))}
 
             {/* Menu Footer */}
-            <div style={{
-              padding: '24px',
-              marginTop: '32px',
-              borderTop: '1px solid #e5e7eb',
-              backgroundColor: '#f8fafc'
-            }}>
-              <p style={{
-                color: '#6b7280',
-                fontSize: '14px',
-                margin: 0,
-                textAlign: 'center'
-              }}>
+            <div className={styles.mobileMenuFooter}>
+              <p className={styles.mobileMenuFooterText}>
                 Dusun Kalibulus<br />
                 Kalurahan Bimomartani
               </p>
