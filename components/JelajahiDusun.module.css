@@ -1,0 +1,246 @@
+/* JelajahiDusun.module.css */
+
+.jelajahiSection {
+  padding: 50px 20px;
+  background: white;
+  position: relative;
+  z-index: 10;
+  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.mainContent {
+  display: flex;
+  align-items: center;
+  gap: 80px;
+}
+
+.textContent {
+  flex: 1;
+  max-width: 450px;
+}
+
+.sectionTitle {
+  color: #0891b2;
+  font-weight: bold;
+  font-size: clamp(2.5rem, 4vw, 3.5rem);
+  line-height: 1.1;
+  margin-bottom: 32px;
+  letter-spacing: 0px;
+}
+
+.sectionDescription {
+  font-size: clamp(1rem, 1.5vw, 1.125rem);
+  line-height: 1.7;
+  color: #374151;
+  font-weight: 400;
+  margin-bottom: 40px;
+}
+
+.cardsContainer {
+  flex: 1;
+  position: relative;
+  height: 450px;
+  max-width: 500px;
+  min-width: 450px;
+}
+
+.cardsDesktop {
+  display: block;
+}
+
+.cardsMobile {
+  display: none;
+}
+
+.exploreCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border-radius: 20px;
+  padding: 24px 16px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+  color: inherit;
+  border: 2px solid #e5e7eb;
+  cursor: pointer;
+  width: 100%;
+  min-height: 200px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.exploreCard:hover {
+  background: #f8fafc;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+  transform: translateY(-8px) scale(1.03);
+  border-color: #059669;
+}
+
+/* Desktop Card Positions */
+.cardPosition1 { 
+  position: absolute;
+  top: 0px; 
+  left: 0px; 
+  width: 200px;
+}
+
+.cardPosition2 { 
+  position: absolute;
+  top: 0px; 
+  right: 0px; 
+  width: 200px;
+}
+
+.cardPosition3 { 
+  position: absolute;
+  top: 250px; 
+  left: 80px; 
+  width: 200px;
+}
+
+.cardPosition4 { 
+  position: absolute;
+  top: 250px; 
+  right: -80px; 
+  width: 200px;
+}
+
+.mobileCard {
+  background: white;
+  border-radius: 16px;
+  padding: 24px 16px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  border: 2px solid #f1f5f9;
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconContainer {
+  background: #E0F2FE;
+  border-radius: 24px;
+  padding: 28px;
+  margin-bottom: 20px;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 6px 16px rgba(8, 145, 178, 0.1);
+  position: relative;
+  z-index: 2;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.exploreCard:hover .iconContainer {
+  transform: scale(1.1) rotate(-5deg);
+  box-shadow: 0 12px 28px rgba(8, 145, 178, 0.3);
+}
+
+.cardIcon {
+  font-size: 48px;
+  transition: filter 0.3s ease;
+}
+
+.exploreCard:hover .cardIcon {
+  filter: brightness(1.2) saturate(1.3);
+}
+
+.cardTitle {
+  color: #374151;
+  font-weight: 600;
+  font-size: 15px;
+  margin: 0;
+  line-height: 1.3;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  position: relative;
+  z-index: 2;
+  text-align: center;
+}
+
+/* Tablet Responsive */
+@media (max-width: 1024px) {
+  .mainContent {
+    flex-direction: column;
+    gap: 40px;
+  }
+  
+  .textContent {
+    max-width: 100%;
+  }
+
+  .cardsContainer {
+    width: 100%;
+    height: auto;
+    max-width: 100%;
+    min-width: auto;
+  }
+
+  .cardsDesktop {
+    display: none;
+  }
+
+  .cardsMobile {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    width: 100%;
+  }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .jelajahiSection {
+    padding: 40px 20px;
+  }
+
+  .sectionTitle {
+    font-size: clamp(1.8rem, 6vw, 2.2rem);
+    margin-bottom: 20px;
+  }
+
+  .sectionDescription {
+    font-size: clamp(0.9rem, 3vw, 1rem);
+    margin-bottom: 0;
+  }
+
+  .exploreCard {
+    min-height: 160px;
+    padding: 20px 12px;
+  }
+
+  .cardIcon {
+    font-size: 32px;
+  }
+
+  .iconContainer {
+    width: 60px;
+    height: 60px;
+    padding: 20px;
+  }
+
+  .cardTitle {
+    font-size: 12px;
+    letter-spacing: 0.3px;
+  }
+}
+
+/* Animations */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
