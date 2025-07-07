@@ -39,14 +39,14 @@ const TopBar = () => {
   }, []);
 
   useEffect(() => {
-    const options = {
+    const options: IntersectionObserverInit = {
       root: null,
       rootMargin: "0px",
       threshold: 0.4,
     };
 
-    const observer = new IntersectionObserver((entries: any) => {
-      entries.forEach((entry: any) => {
+    const observer = new IntersectionObserver((entries: IntersectionObserverEntry[]) => {
+      entries.forEach((entry: IntersectionObserverEntry) => {
         if (entry.isIntersecting) {
           setActiveSection(entry.target.id);
         }

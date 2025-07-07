@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 
 const PetaDusun = () => {
   const [isVisible, setIsVisible] = React.useState(false);
@@ -130,18 +131,23 @@ const PetaDusun = () => {
               border: '1px solid #e2e8f0',
               transition: 'all 0.3s ease'
             }}>
-              <img 
-                src="assets/logo-peta.png" 
-                alt="Peta Dusun Kalibulus" 
+              <Image 
+                src="/assets/logo-peta.png" 
+                alt="Peta Dusun Kalibulus"
+                width={isMobile ? 300 : 400}
+                height={isMobile ? 300 : 400}
                 style={{
                   maxWidth: '100%',
                   height: 'auto',
-                  maxHeight: isMobile ? '300px' : '400px',
                   borderRadius: '12px',
                   filter: isHovered ? 'brightness(1.05) saturate(1.1)' : 'brightness(1)',
                   transition: 'filter 0.3s ease',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                  objectFit: 'contain'
                 }}
+                priority={false}
+                placeholder="blur"
+                blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDQwMCA0MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iNDAwIiBmaWxsPSIjZjNmNGY2Ii8+Cjwvc3ZnPgo="
               />
             </div>
 

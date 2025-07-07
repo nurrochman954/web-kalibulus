@@ -1,10 +1,9 @@
 import React from 'react';
 
-const ExploreCard = ({ title, icon, link, index }: {
+const ExploreCard = ({ title, icon, link }: {
   title: string;
   icon: string;
   link: string;
-  index: number;
 }) => {
   const [isHovered, setIsHovered] = React.useState(false);
   
@@ -348,7 +347,6 @@ const JelajahiDusun: React.FC<JelajahiDusunProps> = ({
                     title={cards[0].title}
                     icon={cards[0].icon}
                     link={cards[0].link}
-                    index={0}
                   />
                 </div>
                 
@@ -366,7 +364,6 @@ const JelajahiDusun: React.FC<JelajahiDusunProps> = ({
                     title={cards[1].title}
                     icon={cards[1].icon}
                     link={cards[1].link}
-                    index={1}
                   />
                 </div>
                 
@@ -384,7 +381,6 @@ const JelajahiDusun: React.FC<JelajahiDusunProps> = ({
                     title={cards[2].title}
                     icon={cards[2].icon}
                     link={cards[2].link}
-                    index={2}
                   />
                 </div>
                 
@@ -402,7 +398,6 @@ const JelajahiDusun: React.FC<JelajahiDusunProps> = ({
                     title={cards[3].title}
                     icon={cards[3].icon}
                     link={cards[3].link}
-                    index={3}
                   />
                 </div>
               </div>

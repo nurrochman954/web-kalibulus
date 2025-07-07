@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 
 const Footer = ({ 
   logoImage = "/assets/logo-kab-sleman.png",
   logoAlt = "Logo Dusun Kalibulus",
   address = {
     line1: "Dusun Kalibulus, Kalurahan Bimomartani",
-    line2: "Kapanewon Ngemplak, Kabupaten Sleman", 
+    line2: "Kecamatan Ngemplak, Kabupaten Sleman", 
     line3: "Daerah Istimewa Yogyakarta"
   },
   copyright = "© 2025. All rights reserved.",
   links = [
     { label: "Website Kalurahan Bimomartani", href: "https://bimomartanisid.slemankab.go.id/" },
-    { label: "Website Kapanewon Ngemplak", href: "https://ngemplak.slemankab.go.id/" }
+    { label: "Website Kecamatan Ngemplak", href: "https://ngemplak.slemankab.go.id/" }
   ]
 }) => {
   const [isMounted, setIsMounted] = useState(false);
@@ -91,17 +92,21 @@ const Footer = ({
           }}>
             {/* Logo */}
             <div style={{ flexShrink: 0 }}>
-              <img 
+              <Image 
                 src={logoImage} 
                 alt={logoAlt} 
+                width={80}
+                height={96}
                 style={{
-                  width: '80px',
-                  height: '96px',
                   transition: 'transform 0.3s ease',
-                  filter: 'brightness(1.1)'
+                  filter: 'brightness(1.1)',
+                  objectFit: 'contain'
                 }}
                 onMouseEnter={(e) => (e.target as HTMLImageElement).style.transform = 'scale(1.05)'}
                 onMouseLeave={(e) => (e.target as HTMLImageElement).style.transform = 'scale(1)'}
+                priority={false}
+                placeholder="blur"
+                blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iOTYiIHZpZXdCb3g9IjAgMCA4MCA5NiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9Ijk2IiBmaWxsPSIjZjNmNGY2Ii8+Cjwvc3ZnPgo="
               />
             </div>
             
