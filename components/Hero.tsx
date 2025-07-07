@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react';
 const Hero = () => {
   const [scrollY, setScrollY] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [fontLoaded, setFontLoaded] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
@@ -14,6 +15,21 @@ const Hero = () => {
     const img = new Image();
     img.onload = () => setIsLoaded(true);
     img.src = 'assets/hero.jpeg';
+    
+    // Preload font
+    const loadFont = async () => {
+      try {
+        const font = new FontFace('BODAR', 'url(assets/fonts/BODAR.ttf)');
+        await font.load();
+        document.fonts.add(font);
+        setFontLoaded(true);
+      } catch (error) {
+        console.log('Font loading failed, using fallback');
+        setFontLoaded(true); // Still show content with fallback
+      }
+    };
+    
+    loadFont();
     
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -40,7 +56,7 @@ const Hero = () => {
         filter: isLoaded ? 'brightness(1.1) contrast(1.05)' : 'brightness(0.8)',
         transition: 'filter 0.3s ease-in-out',
         marginTop: 0,
-        paddingTop: '120px' // Increased from 80px to move content higher
+        paddingTop: '120px'
       }}
     >      
       {/* Content */}
@@ -51,19 +67,24 @@ const Hero = () => {
         maxWidth: '100%', 
         width: '100%',
         padding: '0 2rem',
-        paddingTop: '4rem', // Reduced from 8rem to 4rem to move text up
+        paddingTop: '4rem',
         textAlign: 'center'
       }}>
-        <div style={{ animation: 'fade-in 1s ease-out' }}>
+        <div style={{ 
+          animation: 'fade-in 1s ease-out',
+          opacity: fontLoaded ? 1 : 0,
+          transition: 'opacity 0.3s ease-in-out'
+        }}>
           <h1 
             style={{ 
-              fontFamily: 'BODAR, Lato, sans-serif',
+              fontFamily: 'BODAR, serif',
               textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
               fontSize: 'clamp(1.8rem, 4vw, 3.5rem)',
               lineHeight: '1.2',
               marginBottom: '1.5rem',
               color: 'white',
-              fontWeight: 'bold'
+              fontWeight: 'bold',
+              textAlign: 'center'
             }}
           >
             <span style={{ display: 'block', marginBottom: '0.5rem' }}>Selamat Datang di</span>
@@ -79,14 +100,15 @@ const Hero = () => {
           
           <p 
             style={{ 
-              fontFamily: 'Lato, sans-serif',
+              fontFamily: 'BODAR, serif',
               textShadow: '1px 1px 2px rgba(0,0,0,0.5)',
               fontSize: 'clamp(1rem, 2.5vw, 1.5rem)',
               lineHeight: '1.4',
               marginBottom: '2rem',
               color: 'white',
               maxWidth: '80%',
-              margin: '0 auto 2rem auto'
+              margin: '0 auto 2rem auto',
+              textAlign: 'center'
             }}
           >
             Gerbang digital untuk semua informasi, layanan, dan cerita
@@ -95,12 +117,13 @@ const Hero = () => {
           {/* Additional small text */}
           <p 
             style={{ 
-              fontFamily: 'Lato, sans-serif',
+              fontFamily: 'BODAR, serif',
               fontSize: 'clamp(0.8rem, 1.5vw, 1rem)',
               color: 'rgba(255, 255, 255, 0.8)',
               marginBottom: '3rem',
               lineHeight: '1.3',
-              animation: 'fade-in-delay 1s ease-out 0.6s both'
+              animation: 'fade-in-delay 1s ease-out 0.6s both',
+              textAlign: 'center'
             }}
           >
           </p>
@@ -139,6 +162,14 @@ const Hero = () => {
       )}
 
       <style jsx>{`
+        @font-face {
+          font-family: 'BODAR';
+          src: url('assets/fonts/BODAR.ttf') format('truetype');
+          font-display: block;
+          font-weight: normal;
+          font-style: normal;
+        }
+
         @keyframes fade-in {
           from {
             opacity: 0;
@@ -188,12 +219,12 @@ const Hero = () => {
         @media (max-width: 640px) {
           #hero {
             min-height: 100vh;
-            min-height: 100svh; /* For mobile browsers */
-            padding-top: 100px; /* Smaller padding for mobile */
+            min-height: 100svh;
+            padding-top: 100px;
           }
           
           #hero > div {
-            padding-top: 2rem !important; /* Even less padding on mobile */
+            padding-top: 2rem !important;
           }
         }
 
@@ -208,6 +239,35 @@ const Hero = () => {
         /* Smooth scrolling for the whole page */
         html {
           scroll-behavior: smooth;
+        }
+
+        /* Ensure text remains centered on all devices */
+        h1, p {
+          text-align: center !important;
+        }
+
+        /* Additional responsive adjustments */
+        @media (max-width: 768px) {
+          h1 {
+            font-size: clamp(1.5rem, 6vw, 2.5rem) !important;
+          }
+          
+          p {
+            font-size: clamp(0.9rem, 3vw, 1.2rem) !important;
+            max-width: 90% !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          h1 {
+            font-size: clamp(1.3rem, 7vw, 2rem) !important;
+            line-height: 1.3 !important;
+          }
+          
+          p {
+            font-size: clamp(0.8rem, 3.5vw, 1rem) !important;
+            max-width: 95% !important;
+          }
         }
       `}</style>
     </section>
