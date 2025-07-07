@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Image from 'next/image';
 
 const Footer = ({ 
@@ -6,187 +6,77 @@ const Footer = ({
   logoAlt = "Logo Dusun Kalibulus",
   address = {
     line1: "Dusun Kalibulus, Kalurahan Bimomartani",
-    line2: "Kecamatan Ngemplak, Kabupaten Sleman", 
+    line2: "Kapanewon Ngemplak, Kabupaten Sleman", 
     line3: "Daerah Istimewa Yogyakarta"
   },
   copyright = "© 2025. All rights reserved.",
   links = [
     { label: "Website Kalurahan Bimomartani", href: "https://bimomartanisid.slemankab.go.id/" },
-    { label: "Website Kecamatan Ngemplak", href: "https://ngemplak.slemankab.go.id/" }
+    { label: "Website Kapanewon Ngemplak", href: "https://ngemplak.slemankab.go.id/" }
   ]
 }) => {
-  const [isMounted, setIsMounted] = useState(false);
-  const [screenSize, setScreenSize] = useState({
-    isLarge: false,
-    isMedium: false,
-    isSmall: true
-  });
-
-  useEffect(() => {
-    setIsMounted(true);
-    
-    const updateScreenSize = () => {
-      const width = window.innerWidth;
-      setScreenSize({
-        isLarge: width >= 1024,
-        isMedium: width >= 768,
-        isSmall: width >= 640
-      });
-    };
-
-    updateScreenSize();
-    window.addEventListener('resize', updateScreenSize);
-    return () => window.removeEventListener('resize', updateScreenSize);
-  }, []);
-
-  // Default mobile-first styles for SSR
-  const getResponsiveStyles = () => {
-    if (!isMounted) {
-      return {
-        gridCols: '1fr',
-        flexDirection: 'column' as React.CSSProperties['flexDirection'],
-        textAlign: 'center' as React.CSSProperties['textAlign'],
-        alignItems: 'center' as React.CSSProperties['alignItems'],
-        justifyContent: 'center' as React.CSSProperties['justifyContent']
-      };
-    }
-
-    return {
-      gridCols: screenSize.isLarge ? '1fr 1fr' : '1fr',
-      flexDirection: (screenSize.isSmall ? 'row' : 'column') as React.CSSProperties['flexDirection'],
-      textAlign: (screenSize.isLarge ? 'right' : 'center') as React.CSSProperties['textAlign'],
-      alignItems: (screenSize.isLarge ? 'flex-end' : 'center') as React.CSSProperties['alignItems'],
-      justifyContent: (screenSize.isMedium ? 'flex-end' : 'center') as React.CSSProperties['justifyContent']
-    };
-  };
-
-  const styles = getResponsiveStyles();
-
   return (
-    <footer style={{
-      background: 'linear-gradient(to right, #22d3ee, #0891b2, #0e7490)',
-      color: 'white',
-      padding: '2rem 0'
-    }}>
-      <div style={{
-        maxWidth: '1200px',
-        margin: '0 auto',
-        padding: '0 1rem'
-      }}>
+    <footer className="bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 text-white py-6 lg:py-8">
+      <div className="container-custom">
         {/* Main Content */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: styles.gridCols,
-          gap: '2rem',
-          alignItems: 'center',
-          marginBottom: '2rem'
-        }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-center mb-6">
           
           {/* Left Section - Logo and Address */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1.5rem',
-            textAlign: styles.flexDirection === 'row' ? 'left' : 'center' as React.CSSProperties['textAlign'],
-            flexDirection: styles.flexDirection
-          }}>
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left">
             {/* Logo */}
-            <div style={{ flexShrink: 0 }}>
+            <div className="flex-shrink-0">
               <Image 
                 src={logoImage} 
                 alt={logoAlt} 
-                width={80}
-                height={96}
-                style={{
-                  transition: 'transform 0.3s ease',
-                  filter: 'brightness(1.1)',
-                  objectFit: 'contain'
-                }}
-                onMouseEnter={(e) => (e.target as HTMLImageElement).style.transform = 'scale(1.05)'}
-                onMouseLeave={(e) => (e.target as HTMLImageElement).style.transform = 'scale(1)'}
+                width={70}
+                height={84}
+                className="transition-transform duration-300 hover:scale-105 filter brightness-110"
                 priority={false}
                 placeholder="blur"
-                blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iOTYiIHZpZXdCb3g9IjAgMCA4MCA5NiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9Ijk2IiBmaWxsPSIjZjNmNGY2Ii8+Cjwvc3ZnPgo="
+                blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzAiIGhlaWdodD0iODQiIHZpZXdCb3g9IjAgMCA3MCA4NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjcwIiBoZWlnaHQ9Ijg0IiBmaWxsPSIjZjNmNGY2Ii8+Cjwvc3ZnPgo="
               />
             </div>
             
             {/* Address */}
-            <div>
-              <div style={{
-                fontSize: '16px',
-                lineHeight: '1.6',
-                color: 'rgba(255, 255, 255, 0.95)'
-              }}>
-                <div style={{ fontWeight: '600', color: 'white' }}>{address.line1}</div>
-                <div>{address.line2}</div>
-                <div>{address.line3}</div>
-              </div>
+            <div className="flex-1">
+              <address className="not-italic text-white/95 leading-relaxed">
+                <div className="text-sm sm:text-base font-medium space-y-0.5">
+                  <div className="font-semibold text-white">{address.line1}</div>
+                  <div className="text-white/90">{address.line2}</div>
+                  <div className="text-white/90">{address.line3}</div>
+                </div>
+              </address>
             </div>
           </div>
           
           {/* Right Section - Navigation Links */}
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: styles.alignItems,
-            textAlign: styles.textAlign
-          }}>
-            <h3 style={{
-              fontSize: '18px',
-              fontWeight: '600',
-              color: 'white',
-              marginBottom: '1rem',
-              margin: '0 0 1rem 0'
-            }}>
-              Jelajahi:
-            </h3>
-            <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {links.map((link, index) => (
-                <a 
-                  key={index}
-                  href={link.href} 
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    color: 'rgba(255, 255, 255, 0.85)',
-                    textDecoration: 'none',
-                    fontSize: '15px',
-                    fontWeight: '500',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.target as HTMLAnchorElement).style.color = 'white';
-                    (e.target as HTMLAnchorElement).style.textDecoration = 'underline';
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.target as HTMLAnchorElement).style.color = 'rgba(255, 255, 255, 0.85)';
-                    (e.target as HTMLAnchorElement).style.textDecoration = 'none';
-                  }}
-                >
-                  {link.label}
-                </a>
-              ))}
-            </nav>
+          <div className="flex flex-col justify-center items-center lg:items-end text-center lg:text-right">
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-2">
+                Jelajahi:
+              </h3>
+              <nav className="space-y-1">
+                {links.map((link, index) => (
+                  <div key={index}>
+                    <a 
+                      href={link.href} 
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block text-white/80 hover:text-white hover:underline transition-all duration-200 text-sm lg:text-base font-medium"
+                    >
+                      {link.label}
+                    </a>
+                  </div>
+                ))}
+              </nav>
+            </div>
           </div>
         </div>
         
-        {/* Bottom Section - Copyright Only */}
-        <div style={{
-          borderTop: '1px solid rgba(255, 255, 255, 0.2)',
-          paddingTop: '1.5rem',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center'
-        }}>
-          {/* Copyright - Centered */}
-          <div style={{
-            textAlign: 'center'
-          }}>
-            <p style={{
-              color: 'rgba(255, 255, 255, 0.7)',
-              fontSize: '14px',
-              margin: 0
-            }}>
+        {/* Bottom Section - Copyright */}
+        <div className="border-t border-white/20 pt-4">
+          <div className="flex justify-center items-center">
+            <p className="text-white/70 text-sm text-center">
               {copyright}
             </p>
           </div>
