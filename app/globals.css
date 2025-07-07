@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Reset CSS */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Custom font jika ada file lokal */
+@font-face {
+  font-family: 'BODAR';
+  src: url('/assets/fonts/BODAR.ttf') format('truetype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lato-Local';
+  src: url('/assets/fonts/Lato-Regular.ttf') format('truetype');
+  font-display: swap;
+}
+
+body {
+  font-family: 'Lato', Arial, Helvetica, sans-serif;
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+  }
+  
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+  }
+}
+
+@layer utilities {
+  .font-bodar {
+    font-family: 'BODAR', 'Lato', sans-serif;
+  }
+  
+  .font-lato {
+    font-family: 'Lato', Arial, Helvetica, sans-serif;
+  }
+  
+  .text-shadow {
+    text-shadow: 5px 5px 4px rgba(0, 0, 0, 0.25);
+  }
+  
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
