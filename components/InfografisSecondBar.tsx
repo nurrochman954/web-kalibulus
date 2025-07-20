@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { Users, MapPin, GraduationCap, Zap, Heart } from 'lucide-react';
 
 const infografisMenus = [
