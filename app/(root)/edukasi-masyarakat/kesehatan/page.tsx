@@ -5,19 +5,17 @@ import Header from "@/components/Header";
 import TopBar from "@/components/TopBar";
 import Footer from "@/components/Footer";
 import EdukasiSecondBar from "@/components/EdukasiSecondBar";
-import PendudukComponent from "@/components/Penduduk";
 
-const EdukasiMasyarakat: React.FC = () => {
+const Kesehatan: React.FC = () => {
   return (
     <main className="min-h-screen">
       <Header />
       <TopBar />
-      <EdukasiSecondBar />
-      <PendudukComponent />
+      <EdukasiSecondBar currentPage="kesehatan" />
       <Footer />
     </main>
   );
 };
 
 
-export default EdukasiMasyarakat;
+export default Kesehatan;
