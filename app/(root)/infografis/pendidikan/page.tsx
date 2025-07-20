@@ -11,7 +11,7 @@ const Penduduk: React.FC = () => {
     <main className="min-h-screen">
       <Header />
       <TopBar />
-      <InfografisSecondBar />
+      <InfografisSecondBar currentPage="pendidikan" />
       <Footer />
 
     </main>

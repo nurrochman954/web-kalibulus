@@ -11,7 +11,7 @@ const Wilayah: React.FC = () => {
     <main className="min-h-screen">
       <Header />
       <TopBar />
-      <InfografisSecondBar />
+      <InfografisSecondBar currentPage="wilayah" />
       <Footer />
 
     </main>

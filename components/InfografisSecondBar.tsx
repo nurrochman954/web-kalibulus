@@ -1,4 +1,4 @@
-import { Users, MapPin, GraduationCap, Zap, Heart } from 'lucide-react';
+import { Users, MapPin, GraduationCap, Heart } from 'lucide-react';
 
 const infografisMenus = [
   {
@@ -20,12 +20,6 @@ const infografisMenus = [
     href: '/infografis/pendidikan'
   },
   {
-    id: 'potensi',
-    name: 'Potensi',
-    icon: Zap,
-    href: '/infografis/potensi'
-  },
-  {
     id: 'posyandu',
     name: 'Posyandu',
     icon: Heart,
@@ -45,7 +39,7 @@ const InfografisSecondBar = ({ currentPage = 'penduduk' }) => {
           <div className="flex items-center justify-between">
             
             {/* Left - Title dengan margin kiri untuk centering visual */}
-            <div className="flex items-center ml-16">
+            <div className="flex items-center ml-20">
               <h1 className="text-xl xl:text-2xl font-bold whitespace-nowrap">
                 <span style={{ color: '#0891b2' }}>INFOGRAFIS</span>
                 <span style={{ color: '#0891b2' }} className="ml-2">DUSUN KALIBULUS</span>
@@ -53,7 +47,7 @@ const InfografisSecondBar = ({ currentPage = 'penduduk' }) => {
             </div>
 
             {/* Right - Menu Navigation dengan spacing yang lebih baik */}
-            <div className="flex gap-2">
+            <div className="flex gap-2 mr-12">
               {infografisMenus.map((menu) => {
                 const IconComponent = menu.icon;
                 const isActive = activeSection === menu.id;

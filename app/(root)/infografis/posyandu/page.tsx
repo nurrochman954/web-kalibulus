@@ -11,7 +11,7 @@ const Posyandu: React.FC = () => {
     <main className="min-h-screen">
       <Header />
       <TopBar />
-      <InfografisSecondBar />
+      <InfografisSecondBar currentPage="posyandu" />
       <Footer />
 
     </main>
