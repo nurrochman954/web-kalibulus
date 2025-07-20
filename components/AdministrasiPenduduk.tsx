@@ -4,8 +4,8 @@ const AdministrasiPenduduk = ({
   title = "Administrasi Penduduk",
   statsData = [
     { number: "??????", label: "Penduduk" },
-    { number: "??????", label: "Laki-laki" },
     { number: "??????", label: "Kepala Keluarga" },
+    { number: "??????", label: "Laki-laki" },
     { number: "??????", label: "Perempuan" }
   ]
 }) => {
