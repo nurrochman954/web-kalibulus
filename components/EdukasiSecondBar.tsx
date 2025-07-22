@@ -87,7 +87,6 @@ const EdukasiSecondBar = ({ currentPage = 'pengelolaan-sampah' }) => {
           <div className="text-center">
             <h1 className="text-lg sm:text-xl font-bold">
               <span style={{ color: '#0891b2' }}>EDUKASI MASYARAKAT</span>
-              <span style={{ color: '#0891b2' }} className="ml-2">DUSUN KALIBULUS</span>
             </h1>
           </div>
           
