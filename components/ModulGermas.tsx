@@ -261,6 +261,7 @@ const ModulGermas: React.FC<ModulGermasProps> = ({
   className = ''
 }) => {
   const flipBookRef = useRef<FlipBookRef>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [numPages, setNumPages] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
@@ -360,54 +361,73 @@ const ModulGermas: React.FC<ModulGermasProps> = ({
   // Responsive dimensions dengan single page untuk mobile
   const bookWidth = isMobile ? Math.min(width, window.innerWidth - 40) : width;
   const bookHeight = isMobile ? (bookWidth * 1.4) : height;
-  // Mobile: full width untuk single page, Desktop: setengah untuk double page
-  const pageWidth = isMobile ? bookWidth - 40 : (bookWidth / 2 - 20);
+  // Mobile: full width untuk single page yang tidak terpotong, Desktop: setengah untuk double page
+  const pageWidth = isMobile ? bookWidth - 20 : (bookWidth / 2 - 20);
 
   const onFlip = useCallback((e: FlipEvent) => {
     setCurrentPage(e.data);
+    
+    // Prevent scroll to top on page navigation - improved
+    if (containerRef.current) {
+      // Small delay to ensure flip animation is complete
+      setTimeout(() => {
+        const rect = containerRef.current?.getBoundingClientRect();
+        if (rect) {
+          const isInView = rect.top >= -100 && rect.bottom <= window.innerHeight + 100;
+          
+          if (!isInView) {
+            containerRef.current?.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'center',
+              inline: 'nearest'
+            });
+          }
+        }
+      }, 100);
+    }
   }, []);
 
-  const nextPage = () => {
+  const nextPage = useCallback(() => {
     if (flipBookRef.current) {
       flipBookRef.current.pageFlip().flipNext();
     }
-  };
+  }, []);
 
-  const prevPage = () => {
+  const prevPage = useCallback(() => {
     if (flipBookRef.current) {
       flipBookRef.current.pageFlip().flipPrev();
     }
-  };
+  }, []);
 
-  const goToPage = (pageNum: number) => {
+  const goToPage = useCallback((pageNum: number) => {
     if (flipBookRef.current && pageNum >= 0 && pageNum < numPages) {
       flipBookRef.current.pageFlip().turnToPage(pageNum);
     }
-  };
+  }, [numPages]);
 
   if (error) {
     return (
-      <div className={`${className} flex flex-col justify-center items-center bg-gradient-to-br from-red-50 to-orange-50 border-2 border-red-200 rounded-2xl p-8 shadow-lg`} style={{ height: bookHeight }}>
-        <div className="text-6xl mb-4 animate-bounce">⚠️</div>
-        <div className="text-xl font-semibold text-red-700 mb-4 text-center">{error}</div>
-        <div className="text-sm text-red-600 bg-white rounded-lg p-4 shadow-md">
+      <div className={`${className} flex flex-col justify-center items-center bg-gradient-to-br from-red-50 to-orange-50 border-2 border-red-200 rounded-2xl p-4 sm:p-8 shadow-lg mx-2 sm:mx-0`} style={{ height: bookHeight }}>
+        <div className="text-4xl sm:text-6xl mb-4 animate-bounce">⚠️</div>
+        <div className="text-lg sm:text-xl font-semibold text-red-700 mb-4 text-center">{error}</div>
+        <div className="text-xs sm:text-sm text-red-600 bg-white rounded-lg p-3 sm:p-4 shadow-md max-w-sm">
           <div className="font-medium mb-2">Pastikan:</div>
           <ul className="space-y-1 text-left">
             <li className="flex items-center gap-2">
-              <span className="w-2 h-2 bg-red-400 rounded-full"></span>
-              File PDF dapat diakses
+              <span className="w-2 h-2 bg-red-400 rounded-full flex-shrink-0"></span>
+              <span>File PDF dapat diakses</span>
             </li>
             <li className="flex items-center gap-2">
-              <span className="w-2 h-2 bg-red-400 rounded-full"></span>
-              URL PDF benar
+              <span className="w-2 h-2 bg-red-400 rounded-full flex-shrink-0"></span>
+              <span>URL PDF benar</span>
             </li>
             <li className="flex items-center gap-2">
-              <span className="w-2 h-2 bg-red-400 rounded-full"></span>
-              Server mendukung CORS
+              <span className="w-2 h-2 bg-red-400 rounded-full flex-shrink-0"></span>
+              <span>Server mendukung CORS</span>
             </li>
             <li className="flex items-center gap-2">
-              <span className="w-2 h-2 bg-red-400 rounded-full"></span>
-              Koneksi internet stabil
+              <span className="w-2 h-2 bg-red-400 rounded-full flex-shrink-0"></span>
+              <span>Koneksi internet stabil</span>
             </li>
           </ul>
         </div>
@@ -416,25 +436,31 @@ const ModulGermas: React.FC<ModulGermasProps> = ({
   }
 
   return (
-    <div className={`modul-germas-container ${className}`} style={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      alignItems: 'center',
-      gap: '20px',
-      padding: '20px'
-    }}>
+    <div 
+      ref={containerRef}
+      className={`modul-germas-container ${className}`} 
+      style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center',
+        gap: isMobile ? '12px' : '20px', // Kurangi gap di mobile
+        padding: isMobile ? '10px' : '20px',
+        maxWidth: '100%',
+        overflow: 'hidden'
+      }}
+    >
       {isLoading && (
-        <div className="flex flex-col justify-center items-center bg-gradient-to-br from-cyan-50 to-dusun-100 rounded-2xl p-12 shadow-lg" style={{ height: bookHeight }}>
+        <div className="flex flex-col justify-center items-center bg-gradient-to-br from-cyan-50 to-blue-100 rounded-2xl p-8 sm:p-12 shadow-lg mx-2 sm:mx-0" style={{ height: bookHeight, minWidth: isMobile ? '90vw' : 'auto' }}>
           <div className="relative">
-            <div className="w-16 h-16 border-4 border-cyan-200 border-t-cyan-600 rounded-full animate-spin"></div>
+            <div className="w-12 sm:w-16 h-12 sm:h-16 border-4 border-cyan-200 border-t-cyan-600 rounded-full animate-spin"></div>
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-              <div className="w-6 h-6 bg-cyan-600 rounded-full animate-pulse"></div>
+              <div className="w-4 sm:w-6 h-4 sm:h-6 bg-cyan-600 rounded-full animate-pulse"></div>
             </div>
           </div>
           <div className="text-center mt-6">
-            <div className="text-xl font-semibold text-cyan-800 mb-2">Memuat PDF...</div>
+            <div className="text-lg sm:text-xl font-semibold text-cyan-800 mb-2">Memuat PDF...</div>
             <div className="text-sm text-cyan-600 opacity-80">Mohon tunggu sebentar</div>
-            <div className="mt-4 w-48 h-2 bg-cyan-200 rounded-full overflow-hidden">
+            <div className="mt-4 w-32 sm:w-48 h-2 bg-cyan-200 rounded-full overflow-hidden">
               <div className="h-full bg-gradient-to-r from-cyan-400 to-cyan-600 rounded-full animate-pulse"></div>
             </div>
           </div>
@@ -443,111 +469,118 @@ const ModulGermas: React.FC<ModulGermasProps> = ({
 
       {!isLoading && numPages > 0 && (
         <>
-          <HTMLFlipBook
-            ref={flipBookRef}
-            width={pageWidth}
-            height={bookHeight}
-            size="stretch"
-            minWidth={isMobile ? bookWidth - 40 : 250}
-            maxWidth={pageWidth}
-            minHeight={300}
-            maxHeight={bookHeight}
-            maxShadowOpacity={0.5}
-            showCover={true}
-            mobileScrollSupport={true}
-            swipeDistance={30}
-            clickEventForward={true}
-            usePortrait={true} // Selalu gunakan mode portrait di mobile
-            flippingTime={800}
-            useMouseEvents={true}
-            drawShadow={true}
-            onFlip={onFlip}
-            className="modul-germas"
-            style={{}}
-            startPage={0}
-            startZIndex={0}
-            autoSize={true}
-            renderOnlyPageLengthChange={false}
-            showPageCorners={true}
-            disableFlipByClick={false}
-          >
-            {Array.from({ length: numPages }, (_, index) => (
-              <GermasPage
-                key={index + 1}
-                pageNumber={index + 1}
-                width={pageWidth}
-                pdfUrl={pdfUrl}
-              />
-            ))}
-          </HTMLFlipBook>
-
-          {/* Controls dengan Tailwind styling */}
-          <div className="flex flex-wrap gap-4 items-center justify-center bg-gradient-to-r from-gray-50 to-cyan-50 p-6 rounded-2xl shadow-lg border border-cyan-100">
-            
-            {/* Previous Button */}
-            <button
-              onClick={prevPage}
-              disabled={currentPage === 0}
-              className={`group flex items-center gap-2 px-6 py-3 rounded-xl font-medium text-sm transition-all duration-300 transform ${
-                currentPage === 0 
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                  : 'bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95'
-              }`}
+          <div className="flipbook-wrapper" style={{ position: 'relative' }}>
+            <HTMLFlipBook
+              ref={flipBookRef}
+              width={isMobile ? bookWidth - 20 : pageWidth}
+              height={bookHeight}
+              size="stretch"
+              minWidth={isMobile ? bookWidth - 20 : 250}
+              maxWidth={isMobile ? bookWidth - 20 : pageWidth}
+              minHeight={300}
+              maxHeight={bookHeight}
+              maxShadowOpacity={0.5}
+              showCover={true}
+              mobileScrollSupport={true}
+              swipeDistance={30}
+              clickEventForward={true}
+              usePortrait={true}
+              flippingTime={800}
+              useMouseEvents={!isMobile}
+              drawShadow={true}
+              onFlip={onFlip}
+              className="modul-germas"
+              style={{}}
+              startPage={0}
+              startZIndex={0}
+              autoSize={true}
+              renderOnlyPageLengthChange={false}
+              showPageCorners={!isMobile}
+              disableFlipByClick={false}
             >
-              <svg className="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              <span className="hidden sm:inline">Sebelumnya</span>
-            </button>
-
-            {/* Page Selector */}
-            <div className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 shadow-md border border-cyan-200">
-              <span className="text-sm font-medium text-gray-700">Halaman:</span>
-              <select
-                value={currentPage}
-                onChange={(e) => goToPage(Number(e.target.value))}
-                className="bg-transparent border-none outline-none font-medium text-cyan-700 cursor-pointer text-sm min-w-[60px] focus:ring-2 focus:ring-cyan-400 rounded-lg px-2 py-1"
-              >
-                {Array.from({ length: numPages }, (_, index) => (
-                  <option key={index} value={index} className="bg-white">
-                    {index + 1}
-                  </option>
-                ))}
-              </select>
-              <span className="text-sm text-gray-500">dari {numPages}</span>
-            </div>
-
-            {/* Next Button */}
-            <button
-              onClick={nextPage}
-              disabled={currentPage >= numPages - 1}
-              className={`group flex items-center gap-2 px-6 py-3 rounded-xl font-medium text-sm transition-all duration-300 transform ${
-                currentPage >= numPages - 1 
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                  : 'bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95'
-              }`}
-            >
-              <span className="hidden sm:inline">Selanjutnya</span>
-              <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
+              {Array.from({ length: numPages }, (_, index) => (
+                <GermasPage
+                  key={index + 1}
+                  pageNumber={index + 1}
+                  width={isMobile ? bookWidth - 20 : pageWidth}
+                  pdfUrl={pdfUrl}
+                />
+              ))}
+            </HTMLFlipBook>
           </div>
 
-          {/* Additional Interactive Features */}
-          <div className="flex flex-wrap gap-3 justify-center mt-4">
-            <button 
-              onClick={() => goToPage(0)}
-              className="px-4 py-2 bg-white hover:bg-cyan-50 text-cyan-600 border border-cyan-200 rounded-lg text-sm font-medium transition-all duration-200 hover:border-cyan-400 hover:shadow-md"
-            >
-              Halaman Pertama
-            </button>
-            <button 
-              onClick={() => goToPage(numPages - 1)}
-              className="px-4 py-2 bg-white hover:bg-cyan-50 text-cyan-600 border border-cyan-200 rounded-lg text-sm font-medium transition-all duration-200 hover:border-cyan-400 hover:shadow-md"
-            >
-              Halaman Terakhir
-            </button>
+          {/* Mobile-optimized Controls */}
+          <div className="w-full max-w-lg">
+            {/* Navigation Controls - Mobile Optimized */}
+            <div className={`flex items-center justify-between bg-gradient-to-r from-gray-50 to-cyan-50 p-3 sm:p-4 rounded-2xl shadow-lg border border-cyan-100 ${isMobile ? 'gap-2' : 'gap-4'}`}>
+              
+              {/* Previous Button */}
+              <button
+                onClick={prevPage}
+                disabled={currentPage === 0}
+                className={`group flex items-center justify-center gap-1 px-3 py-3 sm:gap-2 sm:px-4 sm:py-3 rounded-xl font-medium text-xs sm:text-sm transition-all duration-300 transform flex-shrink-0 ${
+                  currentPage === 0 
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                    : 'bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95'
+                }`}
+              >
+                <svg className="w-3 h-3 sm:w-4 sm:h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                <span className={`${isMobile ? 'text-xs' : ''}`}>Sebelumnya</span>
+              </button>
+
+              {/* Page Selector - Responsive */}
+              <div className="flex items-center gap-1 sm:gap-3 bg-white rounded-xl px-2 sm:px-4 py-2 sm:py-3 shadow-md border border-cyan-200 flex-shrink-0">
+                <span className="text-xs sm:text-sm font-medium text-gray-700 hidden sm:inline">Halaman:</span>
+                <select
+                  value={currentPage}
+                  onChange={(e) => goToPage(Number(e.target.value))}
+                  className="bg-transparent border-none outline-none font-medium text-cyan-700 cursor-pointer text-xs sm:text-sm min-w-[40px] sm:min-w-[60px] focus:ring-2 focus:ring-cyan-400 rounded-lg px-1 sm:px-2 py-1"
+                >
+                  {Array.from({ length: numPages }, (_, index) => (
+                    <option key={index} value={index} className="bg-white">
+                      {index + 1}
+                    </option>
+                  ))}
+                </select>
+                <span className="text-xs sm:text-sm text-gray-500">/{numPages}</span>
+              </div>
+
+              {/* Next Button */}
+              <button
+                onClick={nextPage}
+                disabled={currentPage >= numPages - 1}
+                className={`group flex items-center justify-center gap-1 px-3 py-3 sm:gap-2 sm:px-4 sm:py-3 rounded-xl font-medium text-xs sm:text-sm transition-all duration-300 transform flex-shrink-0 ${
+                  currentPage >= numPages - 1 
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                    : 'bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95'
+                }`}
+              >
+                <span className={`${isMobile ? 'text-xs' : ''}`}>Selanjutnya</span>
+                <svg className="w-3 h-3 sm:w-4 sm:h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Quick Navigation - Compact mobile version */}
+            {!isMobile && (
+              <div className="flex flex-wrap gap-3 justify-center" style={{ marginTop: '8px' }}>
+                <button 
+                  onClick={() => goToPage(0)}
+                  className="px-4 py-2 bg-white hover:bg-cyan-50 text-cyan-600 border border-cyan-200 rounded-lg text-sm font-medium transition-all duration-200 hover:border-cyan-400 hover:shadow-md"
+                >
+                  Halaman Pertama
+                </button>
+                <button 
+                  onClick={() => goToPage(numPages - 1)}
+                  className="px-4 py-2 bg-white hover:bg-cyan-50 text-cyan-600 border border-cyan-200 rounded-lg text-sm font-medium transition-all duration-200 hover:border-cyan-400 hover:shadow-md"
+                >
+                  Halaman Terakhir
+                </button>
+              </div>
+            )}
           </div>
         </>
       )}
@@ -563,6 +596,7 @@ const ModulGermas: React.FC<ModulGermasProps> = ({
           -webkit-user-select: none;
           -moz-user-select: none;
           -ms-user-select: none;
+          scroll-behavior: smooth;
         }
 
         .germas-page {
@@ -579,36 +613,89 @@ const ModulGermas: React.FC<ModulGermasProps> = ({
           background: #fff;
         }
 
+        .flipbook-wrapper {
+          width: 100%;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+
+        /* Mobile-specific optimizations */
         @media (max-width: 768px) {
           .modul-germas-container {
-            padding: 10px;
+            padding: 8px !important;
+            gap: 10px !important;
           }
           
           .modul-germas {
             width: 100% !important;
             max-width: calc(100vw - 40px) !important;
           }
+
+          .flipbook-wrapper {
+            width: calc(100vw - 40px);
+            max-width: 100%;
+            margin-bottom: 5px;
+          }
+
+          /* Improve touch interactions */
+          button {
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+          }
+
+          /* Better button sizing for mobile */
+          button {
+            min-height: 44px;
+            font-size: 12px;
+          }
         }
 
         @media (max-width: 480px) {
           .modul-germas-container {
-            padding: 5px;
+            padding: 5px !important;
+            gap: 10px !important;
           }
           
           .modul-germas {
             width: 100% !important;
             max-width: calc(100vw - 20px) !important;
           }
+
+          .flipbook-wrapper {
+            width: calc(100vw - 20px);
+            max-width: 100%;
+          }
+        }
+
+        /* Smooth button interactions */
+        button:not(:disabled) {
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         button:hover:not(:disabled) {
           transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(0,123,255,0.4) !important;
+        }
+
+        button:active:not(:disabled) {
+          transform: translateY(0px) scale(0.98);
         }
 
         select:focus {
           border-color: #007bff;
           box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+        }
+
+        /* Prevent layout shift during loading */
+        .loading-spinner {
+          will-change: transform;
+        }
+
+        /* Better mobile scrolling */
+        @media (max-width: 768px) {
+          html {
+            -webkit-overflow-scrolling: touch;
+          }
         }
       `}</style>
     </div>
