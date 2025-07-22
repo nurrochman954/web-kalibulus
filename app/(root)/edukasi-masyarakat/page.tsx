@@ -11,7 +11,7 @@ import ModulGermas from "@/components/ModulGermas";
 const EdukasiMasyarakat: React.FC = () => {
   // Ganti URL dari Google Drive ke static file
   // Pastikan file modul-germas.pdf ada di folder /public/pdfs/
-  const pdfUrl = "/pdfs/modul-germas.pdf";
+  const pdfUrl = "/pdfs/Modul-germas.pdf";
 
   return (
     <main className="min-h-screen">
