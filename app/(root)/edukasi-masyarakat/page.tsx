@@ -17,7 +17,7 @@ const EdukasiMasyarakat: React.FC = () => {
     <main className="min-h-screen">
       <Header />
       <TopBar />
-      <EdukasiSecondBar />
+      <EdukasiSecondBar  currentPage="edukasi-masyarakat"/>
       <PendudukComponent />
       
       {/* Section untuk Modul GERMAS */}

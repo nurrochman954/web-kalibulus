@@ -24,11 +24,14 @@ const edukasiMenus = [
 const EdukasiSecondBar = ({ currentPage = 'pengelolaan-sampah' }) => {
   const activeSection = currentPage;
 
+  // Debug log to check currentPage value
+  console.log('Current page:', currentPage, 'Active section:', activeSection);
+
   return (
     <div className="bg-gray-100 border-b border-gray-200 pt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Desktop Layout - Minimal changes untuk single line */}
+        {/* Desktop Layout */}
         <div className="hidden lg:block py-4">
           <div className="flex items-center justify-between">
             
@@ -40,7 +43,7 @@ const EdukasiSecondBar = ({ currentPage = 'pengelolaan-sampah' }) => {
               </h1>
             </div>
 
-            {/* Right - Menu Navigation dengan spacing yang lebih baik - dipindah ke kiri */}
+            {/* Right - Menu Navigation dengan spacing yang lebih baik */}
             <div className="flex gap-3 mr-16">
               {edukasiMenus.map((menu) => {
                 const IconComponent = menu.icon;
@@ -53,26 +56,32 @@ const EdukasiSecondBar = ({ currentPage = 'pengelolaan-sampah' }) => {
                     className={`
                       group flex items-center gap-2 px-3 py-2.5 rounded-lg
                       transition-all duration-300 ease-out font-medium text-sm whitespace-nowrap
+                      cursor-pointer relative z-10
                       ${isActive 
                         ? 'bg-cyan-600 text-white shadow-lg transform scale-105' 
                         : 'text-cyan-700 hover:bg-cyan-50 hover:text-cyan-800 border border-transparent hover:border-cyan-200'
                       }
                     `}
+                    // Add click handler for debugging
+                    onClick={(e) => {
+                      console.log('Menu clicked:', menu.name, menu.href);
+                      // Don't prevent default - let the link work normally
+                    }}
                   >
                     <IconComponent 
                       size={16} 
                       className={`
-                        transition-all duration-300
+                        transition-all duration-300 pointer-events-none
                         ${isActive ? 'text-white' : 'text-cyan-600 group-hover:text-cyan-700 group-hover:scale-110'}
                       `}
                     />
-                    <span className="uppercase tracking-wide font-semibold">
+                    <span className="uppercase tracking-wide font-semibold pointer-events-none">
                       {menu.name}
                     </span>
                     
                     {/* Active indicator */}
                     {isActive && (
-                      <div className="w-1 h-1 bg-white rounded-full" />
+                      <div className="w-1 h-1 bg-white rounded-full pointer-events-none" />
                     )}
                   </a>
                 );
@@ -81,7 +90,7 @@ const EdukasiSecondBar = ({ currentPage = 'pengelolaan-sampah' }) => {
           </div>
         </div>
 
-        {/* Mobile & Tablet Layout - Tidak diubah */}
+        {/* Mobile & Tablet Layout */}
         <div className="lg:hidden py-4 space-y-4">
           {/* Centered Title for Mobile */}
           <div className="text-center">
@@ -104,26 +113,32 @@ const EdukasiSecondBar = ({ currentPage = 'pengelolaan-sampah' }) => {
                     className={`
                       group flex items-center gap-2 px-3 py-2 rounded-lg whitespace-nowrap
                       transition-all duration-300 ease-out font-medium text-xs
+                      cursor-pointer relative z-10
                       ${isActive 
                         ? 'bg-cyan-600 text-white shadow-lg' 
                         : 'text-cyan-700 hover:bg-cyan-50 hover:text-cyan-800 border border-transparent hover:border-cyan-200'
                       }
                     `}
+                    // Add click handler for debugging
+                    onClick={(e) => {
+                      console.log('Mobile menu clicked:', menu.name, menu.href);
+                      // Don't prevent default - let the link work normally
+                    }}
                   >
                     <IconComponent 
                       size={14} 
                       className={`
-                        transition-all duration-300
+                        transition-all duration-300 pointer-events-none
                         ${isActive ? 'text-white' : 'text-cyan-600 group-hover:text-cyan-700'}
                       `}
                     />
-                    <span className="uppercase tracking-wide font-semibold">
+                    <span className="uppercase tracking-wide font-semibold pointer-events-none">
                       {menu.name}
                     </span>
                     
                     {/* Active indicator */}
                     {isActive && (
-                      <div className="w-1 h-1 bg-white rounded-full" />
+                      <div className="w-1 h-1 bg-white rounded-full pointer-events-none" />
                     )}
                   </a>
                 );
