@@ -3,10 +3,10 @@ import React from 'react';
 const AdministrasiPenduduk = ({ 
   title = "Administrasi Penduduk",
   statsData = [
-    { number: "??????", label: "Penduduk" },
-    { number: "??????", label: "Kepala Keluarga" },
-    { number: "??????", label: "Laki-laki" },
-    { number: "??????", label: "Perempuan" }
+    { number: "525", label: "Penduduk" },
+    { number: "188", label: "Kepala Keluarga" },
+    { number: "250", label: "Laki-laki" },
+    { number: "275", label: "Perempuan" }
   ]
 }) => {
   const [isVisible, setIsVisible] = React.useState(false);
@@ -108,13 +108,15 @@ const AdministrasiPenduduk = ({
   );
 };
 
-const StatCard = ({ number, label, index, isVisible, isMobile }: {
+interface StatCardProps {
   number: string;
   label: string;
   index: number;
   isVisible: boolean;
   isMobile: boolean;
-}) => {
+}
+
+const StatCard = ({ number, label, index, isVisible, isMobile }: StatCardProps) => {
   const [isHovered, setIsHovered] = React.useState(false);
 
   return (
@@ -165,25 +167,6 @@ const StatCard = ({ number, label, index, isVisible, isMobile }: {
         position: 'relative',
         overflow: 'hidden'
       }}>
-        {/* Background Pattern */}
-        <div style={{
-          position: 'absolute',
-          inset: 0,
-          opacity: 0.15
-        }}>
-          <svg 
-            style={{ width: '100%', height: '100%' }} 
-            viewBox="0 0 100 100" 
-            fill="none"
-          >
-            <circle cx="25" cy="25" r="12" fill="currentColor" />
-            <circle cx="75" cy="75" r="8" fill="currentColor" />
-            <circle cx="70" cy="25" r="6" fill="currentColor" />
-            <circle cx="25" cy="75" r="10" fill="currentColor" />
-            <circle cx="50" cy="50" r="4" fill="currentColor" />
-          </svg>
-        </div>
-        
         {/* Animated glow effect */}
         <div style={{
           position: 'absolute',

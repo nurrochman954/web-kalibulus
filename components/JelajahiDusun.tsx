@@ -66,22 +66,22 @@ const JelajahiDusun: React.FC<JelajahiDusunProps> = ({
     {
       title: "Profil Dusun",
       icon: "🏛️",
-      link: "#profil"
+      link: "profil-dusun"
     },
     {
       title: "Infografis", 
       icon: "📊",
-      link: "#infografis"
+      link: "infografis"
     },
     {
       title: "Edukasi Masyarakat",
       icon: "📚",
-      link: "#edukasi"
+      link: "edukasi-masyarakat"
     },
     {
       title: "Berita Dusun",
       icon: "📰",
-      link: "#berita"
+      link: "berita"
     }
   ]
 }) => {
