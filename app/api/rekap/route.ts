@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { getRekapData } from "@/lib/googleSheets";
+import { getLatestRekapData } from "@/lib/googleSheets"; 
 
 export async function GET() {
   try {
-    const data = await getRekapData();
+    const data = await getLatestRekapData(); 
     return NextResponse.json(data);
   } catch (error) {
     console.error("Error fetching rekap data:", error);
