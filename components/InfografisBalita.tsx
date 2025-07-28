@@ -211,7 +211,7 @@ export default function InfografisBalita() {
                 </TabsContent>
 
                 <TabsContent value="bb">
-                  <div className="space-y-1 text-sm">
+                  <div className="space-y-1 text-2sm">
                     <p>
                       <b>Laki-laki:</b> {bbLaki.toFixed(1)} kg
                     </p>
@@ -225,7 +225,7 @@ export default function InfografisBalita() {
                 </TabsContent>
 
                 <TabsContent value="tb">
-                  <div className="space-y-1 text-sm">
+                  <div className="space-y-1 text-2sm">
                     <p>
                       <b>Laki-laki:</b> {tbLaki.toFixed(1)} cm
                     </p>
@@ -239,7 +239,7 @@ export default function InfografisBalita() {
                 </TabsContent>
 
                 <TabsContent value="lk">
-                  <div className="space-y-1 text-sm">
+                  <div className="space-y-1 text-2sm">
                     <p>
                       <b>Laki-laki:</b> {lkLaki.toFixed(1)} cm
                     </p>
