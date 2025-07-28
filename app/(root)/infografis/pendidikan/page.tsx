@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import TopBar from "@/components/TopBar";
 import Footer from "@/components/Footer";
 import InfografisSecondBar from "@/components/InfografisSecondBar";
+import InfografisPendidikan from "@/components/InfografisPendidikan";
 
 const Penduduk: React.FC = () => {
   return (
@@ -12,6 +13,7 @@ const Penduduk: React.FC = () => {
       <Header />
       <TopBar />
       <InfografisSecondBar currentPage="pendidikan" />
+      <InfografisPendidikan />
       <Footer />
 
     </main>

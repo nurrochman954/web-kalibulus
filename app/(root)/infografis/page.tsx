@@ -6,6 +6,7 @@ import TopBar from "@/components/TopBar";
 import Footer from "@/components/Footer";
 import InfografisSecondBar from "@/components/InfografisSecondBar";
 import PendudukComponent from "@/components/Penduduk";
+import KalibulusProfile from "@/components/KalbulusProfile";
 
 const Infografis: React.FC = () => {
   return (
@@ -13,7 +14,7 @@ const Infografis: React.FC = () => {
       <Header />
       <TopBar />
       <InfografisSecondBar />
-      <PendudukComponent />
+      <KalibulusProfile />
       <Footer />
 
     </main>
