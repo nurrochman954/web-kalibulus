@@ -220,7 +220,6 @@ export default function InfografisBalita() {
                 </CardContent>
               </Card>
 
-              {/* Card 2: Laki-laki & Perempuan */}
               <Card
                 className={`text-center ${
                   isVisible ? "animate-slide-up" : "opacity-0"
@@ -233,16 +232,25 @@ export default function InfografisBalita() {
                   <p className="text-sm md:text-base font-medium text-gray-500">
                     Laki-laki & Perempuan
                   </p>
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="flex items-center gap-2 text-blue-600 text-sm md:text-base">
+
+                  {/* Responsive container */}
+                  <div className="flex flex-col max-md:flex-row justify-center items-center gap-3 max-md:gap-4 text-sm md:text-base">
+                    {/* Laki-laki */}
+                    <div className="flex flex-col md:flex-row items-center gap-1 text-blue-600">
                       <FaMale className="text-xl" />
-                      <span className="font-semibold">Laki-laki:</span>
-                      <span>{jumlahLaki} anak</span>
+                      <div>
+                        <span className="font-semibold">Laki-laki:</span>{" "}
+                        <span>{jumlahLaki} anak</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 text-pink-600 text-sm md:text-base">
+
+                    {/* Perempuan */}
+                    <div className="flex flex-col md:flex-row items-center gap-1 text-pink-600">
                       <FaFemale className="text-xl" />
-                      <span className="font-semibold">Perempuan:</span>
-                      <span>{jumlahPerempuan} anak</span>
+                      <div>
+                        <span className="font-semibold">Perempuan:</span>{" "}
+                        <span>{jumlahPerempuan} anak</span>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -250,48 +258,49 @@ export default function InfografisBalita() {
 
               {/* Card 3: Rata-rata */}
               <Card
-                className={`text-center ${
-                  isVisible ? "animate-slide-up" : "opacity-0"
+                className={`text-center transition-all duration-700 ease-out ${
+                  isVisible
+                    ? "opacity-100 translate-y-0"
+                    : "opacity-0 translate-y-5"
                 }`}
               >
                 <CardContent className="py-4">
-                  <p className="text-sm md:text-base text-gray-500 mb-2 font-medium">
+                  <p className="text-sm sm:text-base text-gray-500 mb-2 font-medium leading-tight">
                     Rata-rata Umur, Berat Badan, Tinggi Badan, Lingkar Kepala
                   </p>
 
                   <Tabs defaultValue="umur" className="w-full">
-                    <TabsList className="grid grid-cols-2 sm:grid-cols-4 mb-2 text-xs sm:text-sm">
+                    <TabsList className="grid grid-cols-2 sm:grid-cols-4 gap-1 mb-9 sm:mb-2 text-xs sm:text-sm">
                       <TabsTrigger
                         value="umur"
-                        className="flex items-center justify-center"
+                        className="flex items-center justify-center px-1"
                       >
                         <FaClock className="w-4 h-4 mr-1 text-blue-600" />
                         Umur
                       </TabsTrigger>
                       <TabsTrigger
                         value="bb"
-                        className="flex items-center justify-center"
+                        className="flex items-center justify-center px-1"
                       >
                         <FaWeight className="w-4 h-4 mr-1 text-pink-600" />
                         BB
                       </TabsTrigger>
                       <TabsTrigger
                         value="tb"
-                        className="flex items-center justify-center"
+                        className="flex items-center justify-center px-1"
                       >
                         <FaRulerVertical className="w-4 h-4 mr-1 text-green-600" />
                         TB
                       </TabsTrigger>
                       <TabsTrigger
                         value="lk"
-                        className="flex items-center justify-center"
+                        className="flex items-center justify-center px-1"
                       >
                         <FaCircle className="w-4 h-4 mr-1 text-yellow-500" />
                         LK
                       </TabsTrigger>
                     </TabsList>
 
-                    {/* Tabs Content */}
                     {[
                       {
                         value: "umur",
@@ -350,7 +359,7 @@ export default function InfografisBalita() {
                         <div className="space-y-1 text-sm sm:text-base">
                           {tab.data.map((d, idx) => (
                             <p key={idx}>
-                              <b>{d.label}:</b> {d.val.toFixed(1)} {d.suffix}
+                              <b>{d.label}:</b> {d.val?.toFixed(1)} {d.suffix}
                             </p>
                           ))}
                         </div>
