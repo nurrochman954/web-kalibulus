@@ -194,9 +194,9 @@ const InfografisPendidikan = () => {
                 <Award className="w-5 h-5 text-orange-600" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">APK SD</p>
+                <p className="text-xs text-gray-500">Lulusan SD</p>
                 <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">100%</p>
-                <p className="text-xs text-gray-600 mt-0.5">Full coverage</p>
+                <p className="text-xs text-gray-600 mt-0.5">Cakupan Penuh</p>
               </div>
             </div>
           </div>
