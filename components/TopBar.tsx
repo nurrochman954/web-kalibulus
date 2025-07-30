@@ -9,7 +9,6 @@ const menus = [
   { name: "profil dusun", href: "/profil-dusun" },
   { name: "infografis", href: "/infografis" },
   { name: "edukasi masyarakat", href: "/edukasi-masyarakat" },
-  { name: "berita", href: "/berita" },
 ];
 
 const TopBar = () => {
