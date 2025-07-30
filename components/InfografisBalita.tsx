@@ -82,6 +82,27 @@ export default function InfografisBalita() {
       });
   }, []);
 
+  // Intersection Observer untuk animasi
+  useEffect(() => {
+    if (loading) return; // Jangan buat observer dulu
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [loading]);
+
   if (loading) return <p className="text-center p-4">Memuat data...</p>;
   if (!data)
     return <p className="text-center text-red-500">Gagal memuat data</p>;
@@ -112,11 +133,22 @@ export default function InfografisBalita() {
     grafikBulanan,
   } = data;
 
+  const fadeClass = `transition-opacity duration-1000 ${
+    isVisible ? "animate-fade-in" : "opacity-0"
+  }`;
+
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+      <div
+        ref={sectionRef}
+        className="min-h-screen bg-gradient-to-br from-gray-50 to-white"
+      >
         {/* Header */}
-        <div className="bg-white shadow-sm border-b border-gray-100">
+        <div
+          className={`bg-white shadow-sm border-b border-gray-100 ${
+            isVisible ? "animate-fade-in" : "opacity-0"
+          }`}
+        >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6">
             <div className="flex flex-col md:flex-row items-center justify-between">
               <div className="text-center md:text-left mb-4 md:mb-0">
@@ -164,169 +196,219 @@ export default function InfografisBalita() {
 
         {/* Contents */}
         {selectedView === "balita" && (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Card className="text-center ">
-                <CardContent className="py-6 space-y-2">
-                  <div className="text-5xl text-blue-600 flex justify-center">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Card 1: Total Balita Aktif */}
+              <Card
+                className={`text-center ${
+                  isVisible ? "animate-slide-up" : "opacity-0"
+                }`}
+              >
+                <CardContent className="py-4 md:py-6 space-y-2">
+                  <div className="text-4xl md:text-5xl text-blue-600 flex justify-center">
                     <FaChild />
                   </div>
-                  <p className="text-base text-gray-500 font-medium">
+                  <p className="text-sm md:text-base text-gray-500 font-medium">
                     Total Balita Aktif
                   </p>
-                  <h3 className="text-4xl font-extrabold text-blue-900">
+                  <h3 className="text-3xl md:text-4xl font-extrabold text-blue-900">
                     {totalBalita}
                   </h3>
-                  <p className="text-base font-medium text-gray-600">Jiwa</p>
+                  <p className="text-sm md:text-base font-medium text-gray-600">
+                    Jiwa
+                  </p>
                 </CardContent>
               </Card>
 
-              <Card className="text-center">
-                <CardContent className="py-6 space-y-2 ">
-                  <div className="text-5xl text-green-600 flex justify-center">
+              <Card
+                className={`text-center ${
+                  isVisible ? "animate-slide-up" : "opacity-0"
+                }`}
+              >
+                <CardContent className="py-4 md:py-6 space-y-2">
+                  <div className="text-4xl md:text-5xl text-green-600 flex justify-center">
                     <FaVenusMars />
                   </div>
-                  <p className="text-base font-medium text-gray-500">
+                  <p className="text-sm md:text-base font-medium text-gray-500">
                     Laki-laki & Perempuan
                   </p>
-                  {/* Laki-laki */}
-                  <div className="flex items-center justify-center gap-2 text-blue-600">
-                    <FaMale className="text-2xl" />
-                    <span className="font-semibold text-xl">Laki-laki:</span>
-                    <span className="text-xl">{jumlahLaki} anak</span>
-                  </div>
 
-                  {/* Perempuan */}
-                  <div className="flex items-center justify-center gap-2 text-pink-600">
-                    <FaFemale className="text-2xl" />
-                    <span className="font-semibold text-xl">Perempuan:</span>
-                    <span className="text-xl">{jumlahPerempuan} anak</span>
+                  {/* Responsive container */}
+                  <div className="flex flex-col max-md:flex-row justify-center items-center gap-3 max-md:gap-4 text-sm md:text-base">
+                    {/* Laki-laki */}
+                    <div className="flex flex-col md:flex-row items-center gap-1 text-blue-600">
+                      <FaMale className="text-xl" />
+                      <div>
+                        <span className="font-semibold">Laki-laki:</span>{" "}
+                        <span>{jumlahLaki} anak</span>
+                      </div>
+                    </div>
+
+                    {/* Perempuan */}
+                    <div className="flex flex-col md:flex-row items-center gap-1 text-pink-600">
+                      <FaFemale className="text-xl" />
+                      <div>
+                        <span className="font-semibold">Perempuan:</span>{" "}
+                        <span>{jumlahPerempuan} anak</span>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="text-center">
+              {/* Card 3: Rata-rata */}
+              <Card
+                className={`text-center transition-all duration-700 ease-out ${
+                  isVisible
+                    ? "opacity-100 translate-y-0"
+                    : "opacity-0 translate-y-5"
+                }`}
+              >
                 <CardContent className="py-4">
-                  <p className=" text-gray-500 mb-2 font-medium">
+                  <p className="text-sm sm:text-base text-gray-500 mb-2 font-medium leading-tight">
                     Rata-rata Umur, Berat Badan, Tinggi Badan, Lingkar Kepala
                   </p>
 
                   <Tabs defaultValue="umur" className="w-full">
-                    <TabsList className="grid grid-cols-[2fr_1fr_1fr_1fr] mb-2">
+                    <TabsList className="grid grid-cols-2 sm:grid-cols-4 gap-1 mb-9 sm:mb-2 text-xs sm:text-sm">
                       <TabsTrigger
                         value="umur"
-                        className="flex items-center justify-center"
+                        className="flex items-center justify-center px-1"
                       >
                         <FaClock className="w-4 h-4 mr-1 text-blue-600" />
                         Umur
                       </TabsTrigger>
                       <TabsTrigger
                         value="bb"
-                        className="flex items-center justify-center"
+                        className="flex items-center justify-center px-1"
                       >
-                        <FaWeight className="w-4 h-4 mr-1 text-pink-600" /> BB
+                        <FaWeight className="w-4 h-4 mr-1 text-pink-600" />
+                        BB
                       </TabsTrigger>
                       <TabsTrigger
                         value="tb"
-                        className="flex items-center justify-center"
+                        className="flex items-center justify-center px-1"
                       >
-                        <FaRulerVertical className="w-4 h-4 mr-1 text-green-600" />{" "}
+                        <FaRulerVertical className="w-4 h-4 mr-1 text-green-600" />
                         TB
                       </TabsTrigger>
                       <TabsTrigger
                         value="lk"
-                        className="flex items-center justify-center"
+                        className="flex items-center justify-center px-1"
                       >
-                        <FaCircle className="w-4 h-4 mr-1 text-yellow-500" /> LK
+                        <FaCircle className="w-4 h-4 mr-1 text-yellow-500" />
+                        LK
                       </TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="umur">
-                      <div className="space-y-1 text-2sm">
-                        <p>
-                          <b>Laki-laki:</b> {umurLaki.toFixed(0)} bulan
-                        </p>
-                        <p>
-                          <b>Perempuan:</b> {umurPerempuan.toFixed(0)} bulan
-                        </p>
-                        <p>
-                          <b>Total:</b> {rataUmur.toFixed(0)} bulan
-                        </p>
-                      </div>
-                    </TabsContent>
-
-                    <TabsContent value="bb">
-                      <div className="space-y-1 text-2sm">
-                        <p>
-                          <b>Laki-laki:</b> {bbLaki.toFixed(1)} kg
-                        </p>
-                        <p>
-                          <b>Perempuan:</b> {bbPerempuan.toFixed(1)} kg
-                        </p>
-                        <p>
-                          <b>Total:</b> {rataBB.toFixed(1)} kg
-                        </p>
-                      </div>
-                    </TabsContent>
-
-                    <TabsContent value="tb">
-                      <div className="space-y-1 text-2sm">
-                        <p>
-                          <b>Laki-laki:</b> {tbLaki.toFixed(1)} cm
-                        </p>
-                        <p>
-                          <b>Perempuan:</b> {tbPerempuan.toFixed(1)} cm
-                        </p>
-                        <p>
-                          <b>Total:</b> {rataTB.toFixed(1)} cm
-                        </p>
-                      </div>
-                    </TabsContent>
-
-                    <TabsContent value="lk">
-                      <div className="space-y-1 text-2sm">
-                        <p>
-                          <b>Laki-laki:</b> {lkLaki.toFixed(1)} cm
-                        </p>
-                        <p>
-                          <b>Perempuan:</b> {lkPerempuan.toFixed(1)} cm
-                        </p>
-                        <p>
-                          <b>Total:</b> {rataLK.toFixed(1)} cm
-                        </p>
-                      </div>
-                    </TabsContent>
+                    {[
+                      {
+                        value: "umur",
+                        data: [
+                          {
+                            label: "Laki-laki",
+                            val: umurLaki,
+                            suffix: "bulan",
+                          },
+                          {
+                            label: "Perempuan",
+                            val: umurPerempuan,
+                            suffix: "bulan",
+                          },
+                          { label: "Total", val: rataUmur, suffix: "bulan" },
+                        ],
+                      },
+                      {
+                        value: "bb",
+                        data: [
+                          { label: "Laki-laki", val: bbLaki, suffix: "kg" },
+                          {
+                            label: "Perempuan",
+                            val: bbPerempuan,
+                            suffix: "kg",
+                          },
+                          { label: "Total", val: rataBB, suffix: "kg" },
+                        ],
+                      },
+                      {
+                        value: "tb",
+                        data: [
+                          { label: "Laki-laki", val: tbLaki, suffix: "cm" },
+                          {
+                            label: "Perempuan",
+                            val: tbPerempuan,
+                            suffix: "cm",
+                          },
+                          { label: "Total", val: rataTB, suffix: "cm" },
+                        ],
+                      },
+                      {
+                        value: "lk",
+                        data: [
+                          { label: "Laki-laki", val: lkLaki, suffix: "cm" },
+                          {
+                            label: "Perempuan",
+                            val: lkPerempuan,
+                            suffix: "cm",
+                          },
+                          { label: "Total", val: rataLK, suffix: "cm" },
+                        ],
+                      },
+                    ].map((tab) => (
+                      <TabsContent value={tab.value} key={tab.value}>
+                        <div className="space-y-1 text-sm sm:text-base">
+                          {tab.data.map((d, idx) => (
+                            <p key={idx}>
+                              <b>{d.label}:</b> {d.val?.toFixed(1)} {d.suffix}
+                            </p>
+                          ))}
+                        </div>
+                      </TabsContent>
+                    ))}
                   </Tabs>
                 </CardContent>
               </Card>
 
-              <Card className="text-center">
-                <CardContent className="py-6 space-y-2">
-                  <div className="text-4xl text-yellow-400 flex justify-center">
+              {/* Card 4: Stunting */}
+              <Card
+                className={`text-center ${
+                  isVisible ? "animate-slide-up" : "opacity-0"
+                }`}
+              >
+                <CardContent className="py-4 md:py-6 space-y-2">
+                  <div className="text-3xl md:text-4xl text-yellow-400 flex justify-center">
                     <FaExclamationTriangle />
                   </div>
-                  <p className="text-base text-gray-500 font-medium">
+                  <p className="text-sm md:text-base text-gray-500 font-medium">
                     Indikasi Waspada Stunting
                   </p>
-                  <h3 className="text-3xl font-extrabold text-red-600">
+                  <h3 className="text-2xl md:text-3xl font-extrabold text-red-600">
                     {jumlahStunting} anak
                   </h3>
-                  <p className="text-base font-medium text-gray-700">
+                  <p className="text-sm md:text-base font-medium text-gray-700">
                     Persentase: {persenStunting}
                   </p>
-
                   <p className="text-xs text-gray-400 italic">
-                    *Analisis ini hanya berdasarkan tinggi badan. Pemeriksaan
-                    lanjutan tetap diperlukan.
+                    *Analisis ini hanya berdasarkan tinggi badan.
                   </p>
                 </CardContent>
               </Card>
             </div>
-            <hr className="my-10 border-t-2 border-gray-300" />{" "}
-            {/* Pembatas garis */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-300">
-              <div className="text-center pt-4">
-                <h3 className="text-2xl md:text-3xl font-semibold text-blue-900">
+
+            <hr
+              className={`my-8 border-t-2 border-gray-300 ${
+                isVisible ? "animate-slide-up" : "opacity-0"
+              }`}
+            />
+
+            {/* Grafik */}
+            <div
+              className={`bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 hover:shadow-md transition-all duration-300${
+                isVisible ? "animate-slide-up" : "opacity-0"
+              }`}
+            >
+              <div className="text-center pt-2 sm:pt-4">
+                <h3 className="text-xl sm:text-2xl md:text-3xl font-semibold text-blue-900">
                   Grafik Perkembangan Umum
                 </h3>
                 <p className="text-sm text-gray-600">
@@ -335,13 +417,13 @@ export default function InfografisBalita() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                 <div>
-                  <h4 className="font-semibold text-center mb-2">
+                  <h4 className="font-semibold text-center text-sm md:text-base mb-2">
                     BB/TB/LK Laki-laki per Bulan
                   </h4>
                   <ChartGender gender="L" data={grafikBulanan} />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-center mb-2">
+                  <h4 className="font-semibold text-center text-sm md:text-base mb-2">
                     BB/TB/LK Perempuan per Bulan
                   </h4>
                   <ChartGender gender="P" data={grafikBulanan} />
@@ -351,6 +433,75 @@ export default function InfografisBalita() {
           </div>
         )}
       </div>
+      {/* Custom Styles for Animations */}
+      <style jsx>{`
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes slide-up {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes scale-in {
+          from {
+            opacity: 0;
+            transform: scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
+        @keyframes slide-in-left {
+          from {
+            transform: translateX(-100%);
+          }
+          to {
+            transform: translateX(0);
+          }
+        }
+
+        .animate-fade-in {
+          animation: fade-in 0.6s ease-out forwards;
+        }
+
+        .animate-slide-up {
+          animation: slide-up 0.6s ease-out forwards;
+        }
+
+        .animate-scale-in {
+          animation: scale-in 0.6s ease-out forwards;
+        }
+
+        .animate-slide-in-left {
+          animation: slide-in-left 0.3s ease-out forwards;
+        }
+
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
     </>
   );
 }
