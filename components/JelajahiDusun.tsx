@@ -61,7 +61,7 @@ interface JelajahiDusunProps {
 
 const JelajahiDusun: React.FC<JelajahiDusunProps> = ({ 
   title = "Jelajahi Dusun",
-  description = "Melalui website ini Anda dapat menjelajahi segala hal yang terkait dengan dusun, penduduk, demografi, potensi dusun, dan juga berita tentang dusun.",
+  description = "Temukan informasi lengkap tentang profil dusun, data demografi melalui infografis yang menarik, serta berbagai materi edukasi untuk pemberdayaan masyarakat.",
   cards = [
     {
       title: "Profil Dusun",
@@ -77,11 +77,6 @@ const JelajahiDusun: React.FC<JelajahiDusunProps> = ({
       title: "Edukasi Masyarakat",
       icon: "📚",
       link: "edukasi-masyarakat"
-    },
-    {
-      title: "Berita Dusun",
-      icon: "📰",
-      link: "berita"
     }
   ]
 }) => {
@@ -145,54 +140,23 @@ const JelajahiDusun: React.FC<JelajahiDusunProps> = ({
               </p>
             </div>
             
-            {/* Cards - Right (Zigzag Layout) */}
-            <div className="flex-1 relative h-[450px] max-w-lg">
-              {/* Card 1 - Top Left */}
-              <div 
-                className={`
-                  absolute top-0 left-0 w-52
-                  transition-all duration-500 ease-out
-                  ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}
-                `}
-                style={{ transitionDelay: '200ms' }}
-              >
-                <ExploreCard {...cards[0]} />
-              </div>
-              
-              {/* Card 2 - Top Right */}
-              <div 
-                className={`
-                  absolute top-0 right-0 w-52
-                  transition-all duration-500 ease-out
-                  ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}
-                `}
-                style={{ transitionDelay: '350ms' }}
-              >
-                <ExploreCard {...cards[1]} />
-              </div>
-              
-              {/* Card 3 - Bottom Left */}
-              <div 
-                className={`
-                  absolute bottom-0 left-16 w-52
-                  transition-all duration-500 ease-out
-                  ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}
-                `}
-                style={{ transitionDelay: '500ms' }}
-              >
-                <ExploreCard {...cards[2]} />
-              </div>
-              
-              {/* Card 4 - Bottom Right */}
-              <div 
-                className={`
-                  absolute bottom-0 -right-16 w-52
-                  transition-all duration-500 ease-out
-                  ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}
-                `}
-                style={{ transitionDelay: '650ms' }}
-              >
-                <ExploreCard {...cards[3]} />
+            {/* Cards - Right (Horizontal Layout for 3 cards) */}
+            <div className="flex-1 flex items-center">
+              <div className="grid grid-cols-3 gap-6 w-full max-w-3xl">
+                {cards.map((card, index) => (
+                  <div
+                    key={index}
+                    className={`
+                      transition-all duration-500 ease-out
+                      ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}
+                    `}
+                    style={{
+                      transitionDelay: `${200 + (index * 150)}ms`
+                    }}
+                  >
+                    <ExploreCard {...card} />
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -217,8 +181,8 @@ const JelajahiDusun: React.FC<JelajahiDusunProps> = ({
               </p>
             </div>
             
-            {/* Cards Grid */}
-            <div className="grid grid-cols-2 gap-4 sm:gap-6">
+            {/* Cards Grid - 3 cards centered */}
+            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-4 sm:gap-6 max-w-2xl mx-auto">
               {cards.map((card, index) => (
                 <div
                   key={index}
