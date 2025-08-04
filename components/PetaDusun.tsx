@@ -1,69 +1,122 @@
-import React from 'react';
-import { Download, ZoomIn, ZoomOut, Maximize2, X } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { MapPin, Download, Maximize2, X, ZoomIn, ZoomOut, Home, Eye, EyeOff } from 'lucide-react';
 
-// PDF.js type definitions
-interface PDFDocumentProxy {
-  numPages: number;
-  getPage(pageNumber: number): Promise<PDFPageProxy>;
+// Leaflet Type Definitions
+interface LeafletMap {
+  setView(center: [number, number], zoom: number): LeafletMap;
+  remove(): void;
+  zoomIn(): LeafletMap;
+  zoomOut(): LeafletMap;
+  eachLayer(fn: (layer: any) => void): LeafletMap;
+  invalidateSize(): LeafletMap;
+  addLayer(layer: any): LeafletMap;
+  removeLayer(layer: any): LeafletMap;
+  fitBounds(bounds: [[number, number], [number, number]]): LeafletMap;
+  on(event: string, fn: Function): LeafletMap;
+  off(event: string, fn: Function): LeafletMap;
 }
 
-interface PDFPageProxy {
-  getViewport(params: { scale: number }): PDFViewport;
-  render(renderContext: PDFRenderContext): PDFRenderTask;
+interface LeafletLayer {
+  addTo(map: LeafletMap): LeafletLayer;
+  bindPopup(content: string): LeafletLayer;
+  _url?: string;
+  setStyle?(style: any): LeafletLayer;
 }
 
-interface PDFViewport {
-  width: number;
-  height: number;
+interface LeafletTileLayer extends LeafletLayer {
+  _url: string;
 }
 
-interface PDFRenderContext {
-  canvasContext: CanvasRenderingContext2D;
-  viewport: PDFViewport;
+interface LeafletMarker extends LeafletLayer {}
+interface LeafletPolygon extends LeafletLayer {}
+interface LeafletPolyline extends LeafletLayer {}
+
+interface LeafletStatic {
+  map(element: HTMLElement, options?: any): LeafletMap;
+  tileLayer(urlTemplate: string, options?: any): LeafletTileLayer;
+  circleMarker(latlng: [number, number], options?: any): LeafletMarker;
+  polygon(latlngs: [number, number][], options?: any): LeafletPolygon;
+  polyline(latlngs: [number, number][], options?: any): LeafletPolyline;
+  layerGroup(layers?: any[]): any;
+  marker(latlng: [number, number], options?: any): LeafletMarker;
+  divIcon(options?: any): any;
 }
 
-interface PDFRenderTask {
-  promise: Promise<void>;
-  cancel(): void;
-}
-
-interface PDFLoadingTask {
-  promise: Promise<PDFDocumentProxy>;
-}
-
-interface PDFJSLib {
-  getDocument(src: string | { url: string; cMapUrl?: string; cMapPacked?: boolean }): PDFLoadingTask;
-  GlobalWorkerOptions: {
-    workerSrc: string;
-  };
-}
-
-// Declare global pdfjs
 declare global {
   interface Window {
-    pdfjsLib: PDFJSLib;
+    L: LeafletStatic;
+    JSZip: any;
+    fs: {
+      readFile: (filename: string) => Promise<Uint8Array>;
+    };
   }
 }
 
-const PetaDusun = () => {
-  const [isVisible, setIsVisible] = React.useState(false);
-  const [isFullscreen, setIsFullscreen] = React.useState(false);
-  const [zoom, setZoom] = React.useState(75);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [error, setError] = React.useState<string>('');
-  const [numPages, setNumPages] = React.useState<number>(0);
-  const [isMobile, setIsMobile] = React.useState(false);
-  
-  const canvasRef = React.useRef<HTMLCanvasElement>(null);
-  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
-  const renderTaskRef = React.useRef<PDFRenderTask | null>(null);
-  const pdfDocRef = React.useRef<PDFDocumentProxy | null>(null);
+type LayerKey = 'satellite' | 'hybrid' | 'terrain' | 'openstreet';
 
-  // PDF URL - ganti dengan path yang benar
-  const pdfUrl = '/assets/peta-dusun.pdf';
+interface LayerOption {
+  name: string;
+  url: string;
+  attribution: string;
+}
+
+type LayerOptions = Record<LayerKey, LayerOption>;
+
+interface KMZFeature {
+  name: string;
+  description?: string;
+  coordinates: [number, number][] | [number, number];
+  type: 'point' | 'polygon' | 'linestring';
+  style?: {
+    color?: string;
+    fillColor?: string;
+    fillOpacity?: number;
+    weight?: number;
+  };
+}
+
+const PetaDusunInteraktif: React.FC = () => {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<LeafletMap | null>(null);
+  const kmzLayerRef = useRef<any>(null);
+  const currentTileLayerRef = useRef<any>(null);
+  const fullscreenMapRef = useRef<HTMLDivElement>(null);
+  
+  const [isVisible, setIsVisible] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [currentLayer, setCurrentLayer] = useState<LayerKey>('satellite');
+  const [kmzFeatures, setKmzFeatures] = useState<KMZFeature[]>([]);
+  const [kmzLoaded, setKmzLoaded] = useState<boolean>(false);
+  const [showKMZ, setShowKMZ] = useState<boolean>(true);
+  const [mapBounds, setMapBounds] = useState<[[number, number], [number, number]] | null>(null);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+
+  const layerOptions: LayerOptions = {
+    satellite: {
+      name: 'Satelit',
+      url: 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+      attribution: '&copy; Google Satellite'
+    },
+    hybrid: {
+      name: 'Hybrid',
+      url: 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+      attribution: '&copy; Google Hybrid'
+    },
+    terrain: {
+      name: 'Terrain',
+      url: 'https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}',
+      attribution: '&copy; Google Terrain'
+    },
+    openstreet: {
+      name: 'OpenStreetMap',
+      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      attribution: '&copy; OpenStreetMap contributors'
+    }
+  };
 
   // Detect mobile device
-  React.useEffect(() => {
+  useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
@@ -74,7 +127,23 @@ const PetaDusun = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  React.useEffect(() => {
+  // Effect to handle fullscreen map movement
+  useEffect(() => {
+    if (isFullscreen && mapRef.current && fullscreenMapRef.current) {
+      // Move map to fullscreen container
+      fullscreenMapRef.current.appendChild(mapRef.current);
+      
+      // Trigger map resize after DOM update
+      setTimeout(() => {
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.invalidateSize();
+        }
+      }, 150);
+    }
+  }, [isFullscreen]);
+
+  // Intersection Observer for visibility
+  useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -101,294 +170,473 @@ const PetaDusun = () => {
     };
   }, []);
 
-  // Load PDF.js and PDF document
-  React.useEffect(() => {
-    const loadPdfJs = (): Promise<PDFJSLib> => {
-      return new Promise((resolve, reject) => {
-        if (window.pdfjsLib) {
-          resolve(window.pdfjsLib);
-          return;
+  const loadSampleKMZData = () => {
+    const sampleFeatures: KMZFeature[] = [
+      // RT 01
+      {
+        name: 'RT 01',
+        description: 'RT 01',
+        coordinates: [
+          [-7.7580, 110.3720], [-7.7582, 110.3735], [-7.7585, 110.3750], [-7.7590, 110.3765], 
+          [-7.7595, 110.3775], [-7.7600, 110.3780], [-7.7610, 110.3785], [-7.7620, 110.3788], 
+          [-7.7630, 110.3785], [-7.7635, 110.3780], [-7.7640, 110.3770], [-7.7642, 110.3760], 
+          [-7.7645, 110.3750], [-7.7640, 110.3740], [-7.7635, 110.3730], [-7.7630, 110.3720], 
+          [-7.7625, 110.3715], [-7.7620, 110.3710], [-7.7615, 110.3708], [-7.7610, 110.3707], 
+          [-7.7605, 110.3708], [-7.7600, 110.3710], [-7.7590, 110.3715], [-7.7585, 110.3718], 
+          [-7.7580, 110.3720]
+        ],
+        type: 'polygon',
+        style: {
+          color: '#4285F4',
+          fillColor: '#4285F4',
+          fillOpacity: 0.3,
+          weight: 2
         }
+      },
+      // RT 02
+      {
+        name: 'RT 02',
+        description: 'RT 02',
+        coordinates: [
+          [-7.7550, 110.3720], [-7.7552, 110.3735], [-7.7555, 110.3750], [-7.7560, 110.3765], 
+          [-7.7565, 110.3775], [-7.7570, 110.3780], [-7.7575, 110.3785], [-7.7580, 110.3788], 
+          [-7.7585, 110.3785], [-7.7590, 110.3780], [-7.7595, 110.3770], [-7.7597, 110.3760], 
+          [-7.7600, 110.3750], [-7.7595, 110.3740], [-7.7590, 110.3730], [-7.7585, 110.3720], 
+          [-7.7580, 110.3715], [-7.7575, 110.3710], [-7.7570, 110.3708], [-7.7565, 110.3707], 
+          [-7.7560, 110.3708], [-7.7555, 110.3710], [-7.7552, 110.3715], [-7.7550, 110.3718], 
+          [-7.7550, 110.3720]
+        ],
+        type: 'polygon',
+        style: {
+          color: '#34A853',
+          fillColor: '#34A853',
+          fillOpacity: 0.3,
+          weight: 2
+        }
+      },
+      // RT 03
+      {
+        name: 'RT 03',
+        description: 'RT 03',
+        coordinates: [
+          [-7.7600, 110.3790], [-7.7602, 110.3805], [-7.7605, 110.3820], [-7.7610, 110.3835], 
+          [-7.7615, 110.3845], [-7.7620, 110.3850], [-7.7630, 110.3855], [-7.7640, 110.3858], 
+          [-7.7650, 110.3855], [-7.7655, 110.3850], [-7.7660, 110.3840], [-7.7662, 110.3830], 
+          [-7.7665, 110.3820], [-7.7660, 110.3810], [-7.7655, 110.3800], [-7.7650, 110.3790], 
+          [-7.7645, 110.3785], [-7.7640, 110.3780], [-7.7635, 110.3778], [-7.7630, 110.3777], 
+          [-7.7625, 110.3778], [-7.7620, 110.3780], [-7.7610, 110.3785], [-7.7605, 110.3788], 
+          [-7.7600, 110.3790]
+        ],
+        type: 'polygon',
+        style: {
+          color: '#EA4335',
+          fillColor: '#EA4335',
+          fillOpacity: 0.3,
+          weight: 2
+        }
+      },
+      // RT 04
+      {
+        name: 'RT 04',
+        description: 'RT 04',
+        coordinates: [
+          [-7.7520, 110.3790], [-7.7522, 110.3805], [-7.7525, 110.3820], [-7.7530, 110.3835], 
+          [-7.7535, 110.3845], [-7.7540, 110.3850], [-7.7550, 110.3855], [-7.7560, 110.3858], 
+          [-7.7570, 110.3855], [-7.7575, 110.3850], [-7.7580, 110.3840], [-7.7582, 110.3830], 
+          [-7.7585, 110.3820], [-7.7580, 110.3810], [-7.7575, 110.3800], [-7.7570, 110.3790], 
+          [-7.7565, 110.3785], [-7.7560, 110.3780], [-7.7555, 110.3778], [-7.7550, 110.3777], 
+          [-7.7545, 110.3778], [-7.7540, 110.3780], [-7.7530, 110.3785], [-7.7525, 110.3788], 
+          [-7.7520, 110.3790]
+        ],
+        type: 'polygon',
+        style: {
+          color: '#FBBC04',
+          fillColor: '#FBBC04',
+          fillOpacity: 0.3,
+          weight: 2
+        }
+      }
+    ];
 
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-        script.async = true;
-        script.onload = () => {
-          if (window.pdfjsLib) {
-            window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-            resolve(window.pdfjsLib);
+    setKmzFeatures(sampleFeatures);
+    setMapBounds([[-7.7670, 110.3700], [-7.7510, 110.3870]]);
+    setKmzLoaded(true);
+    setIsLoading(false);
+  };
+
+  const loadKMZFile = async () => {
+    try {
+      setIsLoading(true);
+      
+      if (typeof window !== 'undefined' && window.fs && window.fs.readFile) {
+        try {
+          const kmzData = await window.fs.readFile('KALIBULUS RTRW.kmz');
+          if (!window.JSZip) {
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+            script.onload = () => extractKMZ(kmzData);
+            document.head.appendChild(script);
           } else {
-            reject(new Error('PDF.js tidak berhasil dimuat'));
+            extractKMZ(kmzData);
           }
-        };
-        script.onerror = () => reject(new Error('Gagal memuat PDF.js'));
-        
+        } catch (fsError) {
+          await loadFromAssets();
+        }
+      } else {
+        await loadFromAssets();
+      }
+    } catch (error) {
+      console.error('Error loading KMZ:', error);
+      loadSampleKMZData();
+    }
+  };
+
+  const loadFromAssets = async () => {
+    try {
+      const response = await fetch('/assets/KALIBULUS RTRW.kmz');
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      
+      const kmzData = new Uint8Array(await response.arrayBuffer());
+      
+      if (!window.JSZip) {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+        script.onload = () => extractKMZ(kmzData);
         document.head.appendChild(script);
-      });
-    };
+      } else {
+        extractKMZ(kmzData);
+      }
+    } catch (fetchError) {
+      console.log('Using sample data...');
+      loadSampleKMZData();
+    }
+  };
 
-    const loadPdf = async () => {
-      try {
-        setIsLoading(true);
-        setError('');
+  const extractKMZ = async (kmzData: Uint8Array) => {
+    try {
+      const zip = new window.JSZip();
+      const zipContent = await zip.loadAsync(kmzData);
+      
+      let kmlContent = '';
+      for (const filename in zipContent.files) {
+        if (filename.endsWith('.kml')) {
+          kmlContent = await zipContent.files[filename].async('text');
+          break;
+        }
+      }
 
-        const pdfjsLib: PDFJSLib = await loadPdfJs();
+      if (!kmlContent) {
+        throw new Error('No KML file found in KMZ');
+      }
 
-        const loadingTask = pdfjsLib.getDocument({
-          url: pdfUrl,
-          cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',
-          cMapPacked: true
+      const features = parseKMLContent(kmlContent);
+      setKmzFeatures(features);
+      
+      if (features.length > 0) {
+        let minLat = Infinity, maxLat = -Infinity;
+        let minLng = Infinity, maxLng = -Infinity;
+        
+        features.forEach(feature => {
+          if (feature.type === 'point') {
+            const [lat, lng] = feature.coordinates as [number, number];
+            minLat = Math.min(minLat, lat);
+            maxLat = Math.max(maxLat, lat);
+            minLng = Math.min(minLng, lng);
+            maxLng = Math.max(maxLng, lng);
+          } else {
+            const coords = feature.coordinates as [number, number][];
+            coords.forEach(([lat, lng]) => {
+              minLat = Math.min(minLat, lat);
+              maxLat = Math.max(maxLat, lat);
+              minLng = Math.min(minLng, lng);
+              maxLng = Math.max(maxLng, lng);
+            });
+          }
         });
         
-        const pdf = await loadingTask.promise;
-        pdfDocRef.current = pdf;
-        setNumPages(pdf.numPages);
-        
-        await renderPage(pdf, 1);
-        setIsLoading(false);
-        
-      } catch (err: unknown) {
-        const error = err as Error;
-        console.error('Error loading PDF:', err);
-        setError(`Gagal memuat peta: ${error.message || 'Unknown error'}`);
-        setIsLoading(false);
+        setMapBounds([[minLat, minLng], [maxLat, maxLng]]);
+      }
+      
+      setKmzLoaded(true);
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error extracting KMZ:', error);
+      loadSampleKMZData();
+    }
+  };
+
+  const parseKMLContent = (kmlContent: string): KMZFeature[] => {
+    const features: KMZFeature[] = [];
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(kmlContent, 'text/xml');
+    
+    const placemarks = xmlDoc.getElementsByTagName('Placemark');
+    
+    for (let i = 0; i < placemarks.length; i++) {
+      const placemark = placemarks[i];
+      const nameElement = placemark.getElementsByTagName('name')[0];
+      const descElement = placemark.getElementsByTagName('description')[0];
+      
+      const name = nameElement ? nameElement.textContent || `Feature ${i + 1}` : `Feature ${i + 1}`;
+      const description = descElement ? descElement.textContent || '' : '';
+
+      const point = placemark.getElementsByTagName('Point')[0];
+      const polygon = placemark.getElementsByTagName('Polygon')[0];
+      const lineString = placemark.getElementsByTagName('LineString')[0];
+
+      let style = {
+        color: '#4285F4',
+        fillColor: '#4285F4',
+        fillOpacity: 0.3,
+        weight: 2
+      };
+
+      if (point) {
+        const coordElement = point.getElementsByTagName('coordinates')[0];
+        if (coordElement && coordElement.textContent) {
+          const coords = parseKMLCoordinates(coordElement.textContent);
+          if (coords.length > 0) {
+            features.push({
+              name,
+              description,
+              coordinates: coords[0],
+              type: 'point',
+              style
+            });
+          }
+        }
+      } else if (polygon) {
+        const outerBoundary = polygon.getElementsByTagName('outerBoundaryIs')[0];
+        if (outerBoundary) {
+          const linearRing = outerBoundary.getElementsByTagName('LinearRing')[0];
+          if (linearRing) {
+            const coordElement = linearRing.getElementsByTagName('coordinates')[0];
+            if (coordElement && coordElement.textContent) {
+              const coords = parseKMLCoordinates(coordElement.textContent);
+              features.push({
+                name,
+                description,
+                coordinates: coords,
+                type: 'polygon',
+                style
+              });
+            }
+          }
+        }
+      }
+    }
+
+    return features;
+  };
+
+  const parseKMLCoordinates = (coordString: string): [number, number][] => {
+    return coordString.trim().split(/\s+/).map(coord => {
+      const [lng, lat] = coord.split(',').map(Number);
+      return [lat, lng] as [number, number];
+    });
+  };
+
+  useEffect(() => {
+    const loadLeaflet = async () => {
+      if (!document.querySelector('link[href*="leaflet"]')) {
+        const leafletCSS = document.createElement('link');
+        leafletCSS.rel = 'stylesheet';
+        leafletCSS.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+        document.head.appendChild(leafletCSS);
+      }
+
+      if (!window.L) {
+        const leafletJS = document.createElement('script');
+        leafletJS.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+        leafletJS.onload = initializeMap;
+        document.head.appendChild(leafletJS);
+      } else {
+        initializeMap();
+      }
+    };
+
+    const initializeMap = () => {
+      if (!mapRef.current || mapInstanceRef.current) return;
+
+      const map = window.L.map(mapRef.current, {
+        center: [-7.7614, 110.3739],
+        zoom: 15,
+        zoomControl: false,
+        scrollWheelZoom: true,
+        doubleClickZoom: true,
+        touchZoom: true,
+        boxZoom: true,
+        keyboard: true
+      });
+
+      // Add initial tile layer
+      const tileLayer = window.L.tileLayer(layerOptions[currentLayer].url, {
+        attribution: layerOptions[currentLayer].attribution,
+        maxZoom: 20
+      });
+      tileLayer.addTo(map);
+      currentTileLayerRef.current = tileLayer;
+
+      mapInstanceRef.current = map;
+      
+      if (isVisible) {
+        loadKMZFile();
       }
     };
 
     if (isVisible) {
-      loadPdf();
-    }
-  }, [isVisible, pdfUrl]);
-
-  // Natural PDF rendering with high quality - wrapped in useCallback
-  const renderPage = React.useCallback(async (pdf: PDFDocumentProxy, pageNumber: number) => {
-    try {
-      if (!canvasRef.current) return;
-
-      if (renderTaskRef.current) {
-        renderTaskRef.current.cancel();
-        renderTaskRef.current = null;
-      }
-
-      const page = await pdf.getPage(pageNumber);
-      const canvas = canvasRef.current;
-      const context = canvas.getContext('2d');
-      
-      if (!context) {
-        setError('Canvas context tidak tersedia');
-        return;
-      }
-      
-      context.clearRect(0, 0, canvas.width, canvas.height);
-      
-      // Get original page dimensions
-      const originalViewport = page.getViewport({ scale: 1 });
-      
-      // Calculate display scale - responsive for mobile
-      let displayScale = zoom / 100;
-      
-      // Auto adjust zoom for mobile on first load
-      if (isMobile && zoom === 75) {
-        const containerWidth = scrollContainerRef.current?.clientWidth || window.innerWidth - 32;
-        displayScale = Math.min(1, (containerWidth - 40) / originalViewport.width);
-        const newZoom = Math.round(displayScale * 100);
-        if (newZoom !== zoom) {
-          setZoom(newZoom);
-          return; // Re-render will be triggered by zoom change
-        }
-      }
-      
-      // Render at higher resolution for crisp display
-      const renderScale = displayScale * (window.devicePixelRatio || 1) * (isMobile ? 1.2 : 1.5);
-      const renderViewport = page.getViewport({ scale: renderScale });
-      
-      // Set canvas actual size (high res)
-      canvas.width = renderViewport.width;
-      canvas.height = renderViewport.height;
-      
-      // Set canvas display size
-      const displayWidth = originalViewport.width * displayScale;
-      const displayHeight = originalViewport.height * displayScale;
-      
-      canvas.style.width = displayWidth + 'px';
-      canvas.style.height = displayHeight + 'px';
-      
-      // Ensure minimum canvas size untuk scrolling yang proper
-      const minWidth = isMobile ? Math.max(displayWidth, window.innerWidth * 1.2) : displayWidth;
-      canvas.parentElement!.style.minWidth = minWidth + 'px';
-      
-      const renderContext = {
-        canvasContext: context,
-        viewport: renderViewport,
-      };
-      
-      renderTaskRef.current = page.render(renderContext);
-      await renderTaskRef.current.promise;
-      renderTaskRef.current = null;
-      
-    } catch (err: unknown) {
-      const error = err as Error & { name?: string };
-      if (error.name === 'RenderingCancelledException') {
-        console.log(`Rendering cancelled for page ${pageNumber}`);
-        return;
-      }
-      console.error(`Error rendering page ${pageNumber}:`, err);
-      setError(`Gagal memuat halaman ${pageNumber}`);
-    }
-  }, [zoom, isMobile]);
-
-  // Update touch zoom ref when zoom changes
-  React.useEffect(() => {
-    touchZoomRef.current = zoom;
-  }, [zoom]);
-
-  // Re-render when zoom changes
-  React.useEffect(() => {
-    if (!isLoading && numPages > 0 && pdfDocRef.current) {
-      renderPage(pdfDocRef.current, 1);
-    }
-  }, [zoom, isLoading, numPages, isMobile, renderPage]);
-
-  // Enhanced mouse/touch wheel zoom with passive event handling
-  const handleWheel = React.useCallback((e: React.WheelEvent) => {
-    if (e.ctrlKey || e.metaKey) {
-      e.preventDefault();
-      const delta = e.deltaY > 0 ? -10 : 10;
-      setZoom(prev => Math.max(25, Math.min(300, prev + delta)));
-    }
-  }, []);
-
-  // Touch handling for mobile with improved passive event handling
-  const touchStartRef = React.useRef<{ x: number; y: number; distance?: number } | null>(null);
-  const touchZoomRef = React.useRef<number>(zoom);
-
-  const handleTouchStart = React.useCallback((e: React.TouchEvent) => {
-    if (e.touches.length === 1) {
-      touchStartRef.current = {
-        x: e.touches[0].clientX,
-        y: e.touches[0].clientY
-      };
-    } else if (e.touches.length === 2) {
-      const touch1 = e.touches[0];
-      const touch2 = e.touches[1];
-      const distance = Math.sqrt(
-        Math.pow(touch2.clientX - touch1.clientX, 2) + 
-        Math.pow(touch2.clientY - touch1.clientY, 2)
-      );
-      touchStartRef.current = { x: 0, y: 0, distance };
-      touchZoomRef.current = zoom;
-      // Only prevent default for multi-touch
-      if (e.cancelable) {
-        e.preventDefault();
-      }
-    }
-  }, [zoom]);
-
-  const handleTouchMove = React.useCallback((e: React.TouchEvent) => {
-    if (e.touches.length === 2 && touchStartRef.current?.distance) {
-      // Only prevent default for multi-touch and if cancelable
-      if (e.cancelable) {
-        e.preventDefault();
-      }
-      const touch1 = e.touches[0];
-      const touch2 = e.touches[1];
-      const currentDistance = Math.sqrt(
-        Math.pow(touch2.clientX - touch1.clientX, 2) + 
-        Math.pow(touch2.clientY - touch1.clientY, 2)
-      );
-      
-      const scale = currentDistance / touchStartRef.current.distance;
-      const newZoom = Math.max(25, Math.min(300, touchZoomRef.current * scale));
-      setZoom(Math.round(newZoom));
-    }
-  }, []);
-
-  const handleTouchEnd = React.useCallback((e: React.TouchEvent) => {
-    touchStartRef.current = null;
-  }, []);
-
-  // Handle ESC key for fullscreen
-  React.useEffect(() => {
-    const handleKeyPress = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && isFullscreen) {
-        setIsFullscreen(false);
-      }
-    };
-
-    if (isFullscreen) {
-      document.addEventListener('keydown', handleKeyPress);
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
+      loadLeaflet();
     }
 
     return () => {
-      document.removeEventListener('keydown', handleKeyPress);
-      document.body.style.overflow = 'unset';
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+        currentTileLayerRef.current = null;
+      }
     };
-  }, [isFullscreen]);
+  }, [isVisible]);
 
-  const handleDownload = () => {
+  // Add KMZ features to map
+  useEffect(() => {
+    if (!mapInstanceRef.current || !kmzFeatures.length) return;
+
+    if (kmzLayerRef.current) {
+      mapInstanceRef.current.removeLayer(kmzLayerRef.current);
+    }
+
+    const layerGroup = window.L.layerGroup();
+    
+    kmzFeatures.forEach((feature) => {
+      if (feature.type === 'point') {
+        const [lat, lng] = feature.coordinates as [number, number];
+        
+        const customIcon = window.L.divIcon({
+          html: `
+            <div style="
+              background-color: white;
+              border: 2px solid #4285F4;
+              border-radius: 50%;
+              width: 24px;
+              height: 24px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 12px;
+              box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            ">📍</div>
+          `,
+          className: 'custom-div-icon',
+          iconSize: [24, 24],
+          iconAnchor: [12, 12]
+        });
+
+        const marker = window.L.marker([lat, lng], { icon: customIcon }).addTo(layerGroup);
+        marker.bindPopup(`<div class="p-2"><h3 class="font-bold">${feature.name}</h3></div>`);
+      } else if (feature.type === 'polygon') {
+        const coords = feature.coordinates as [number, number][];
+        const polygon = window.L.polygon(coords, {
+          color: feature.style?.color || '#4285F4',
+          fillColor: feature.style?.fillColor || '#4285F4',
+          fillOpacity: feature.style?.fillOpacity || 0.3,
+          weight: feature.style?.weight || 2
+        }).addTo(layerGroup);
+        
+        polygon.bindPopup(`<div class="p-2"><h3 class="font-bold">${feature.name}</h3></div>`);
+      }
+    });
+
+    kmzLayerRef.current = layerGroup;
+    
+    if (showKMZ) {
+      layerGroup.addTo(mapInstanceRef.current);
+    }
+
+    if (mapBounds) {
+      mapInstanceRef.current.fitBounds(mapBounds);
+    }
+
+  }, [kmzFeatures, showKMZ, mapBounds]);
+
+  const changeLayer = (newLayer: LayerKey) => {
+    if (!mapInstanceRef.current || !currentTileLayerRef.current) return;
+
+    // Remove current tile layer
+    mapInstanceRef.current.removeLayer(currentTileLayerRef.current);
+
+    // Add new tile layer
+    const newTileLayer = window.L.tileLayer(layerOptions[newLayer].url, {
+      attribution: layerOptions[newLayer].attribution,
+      maxZoom: 20
+    });
+    newTileLayer.addTo(mapInstanceRef.current);
+    currentTileLayerRef.current = newTileLayer;
+
+    setCurrentLayer(newLayer);
+    
+    // Force blur on select element to close dropdown (especially in fullscreen)
+    if (document.activeElement && document.activeElement instanceof HTMLSelectElement) {
+      document.activeElement.blur();
+    }
+  };
+
+  const toggleKMZVisibility = () => {
+    if (!mapInstanceRef.current || !kmzLayerRef.current) return;
+    
+    if (showKMZ) {
+      mapInstanceRef.current.removeLayer(kmzLayerRef.current);
+    } else {
+      mapInstanceRef.current.addLayer(kmzLayerRef.current);
+    }
+    setShowKMZ(!showKMZ);
+  };
+
+  const zoomIn = () => mapInstanceRef.current?.zoomIn();
+  const zoomOut = () => mapInstanceRef.current?.zoomOut();
+  const resetView = () => {
+    if (mapInstanceRef.current && mapBounds) {
+      mapInstanceRef.current.fitBounds(mapBounds);
+    }
+  };
+
+  const toggleFullscreen = () => {
+    if (isFullscreen) {
+      // Exit fullscreen - move map back to original container
+      if (mapRef.current && fullscreenMapRef.current && fullscreenMapRef.current.children.length > 0) {
+        const originalContainer = document.querySelector('#peta-dusun .relative.bg-gray-100');
+        if (originalContainer) {
+          originalContainer.appendChild(mapRef.current);
+        }
+      }
+      setIsFullscreen(false);
+      
+      // Trigger map resize after DOM update
+      setTimeout(() => {
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.invalidateSize();
+        }
+      }, 200);
+    } else {
+      // Enter fullscreen
+      setIsFullscreen(true);
+    }
+  };
+
+  const downloadOriginalKMZ = () => {
     const link = document.createElement('a');
-    link.href = pdfUrl;
-    link.download = 'Peta-Dusun-Kalibulus.pdf';
+    link.href = '/assets/peta-dusun.pdf';
+    link.download = 'Peta dusun.pdf';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  const handleZoomIn = () => {
-    setZoom(prev => Math.min(prev + (isMobile ? 15 : 25), 300));
-  };
-
-  const handleZoomOut = () => {
-    setZoom(prev => Math.max(prev - (isMobile ? 15 : 25), 25));
-  };
-
-  const fitToWidth = () => {
-    if (scrollContainerRef.current && canvasRef.current) {
-      const containerWidth = scrollContainerRef.current.clientWidth - (isMobile ? 16 : 32);
-      const canvasWidth = canvasRef.current.width / (window.devicePixelRatio || 1) / 1.5;
-      const newZoom = Math.round((containerWidth / canvasWidth) * zoom);
-      setZoom(Math.max(25, Math.min(300, newZoom)));
-      scrollContainerRef.current.scrollTo(0, 0);
-    }
-  };
-
-  const fitToPage = () => {
-    if (scrollContainerRef.current && canvasRef.current) {
-      const containerHeight = scrollContainerRef.current.clientHeight - (isMobile ? 16 : 32);
-      const containerWidth = scrollContainerRef.current.clientWidth - (isMobile ? 16 : 32);
-      const canvasHeight = canvasRef.current.height / (window.devicePixelRatio || 1) / 1.5;
-      const canvasWidth = canvasRef.current.width / (window.devicePixelRatio || 1) / 1.5;
-      
-      const scaleByHeight = containerHeight / canvasHeight;
-      const scaleByWidth = containerWidth / canvasWidth;
-      const scale = Math.min(scaleByHeight, scaleByWidth);
-      
-      const newZoom = Math.round(scale * zoom);
-      setZoom(Math.max(25, Math.min(300, newZoom)));
-      scrollContainerRef.current.scrollTo(0, 0);
-    }
-  };
-
-  const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
-  };
-
-  const handleRetry = () => {
-    setIsLoading(true);
-    setError('');
-    setIsVisible(false);
-    setTimeout(() => setIsVisible(true), 100);
-  };
-
-  // Dynamic height calculation for mobile
+  // Dynamic height calculation
   const getViewerHeight = () => {
     if (isMobile) {
-      return Math.min(window.innerHeight * 0.7, 600);
+      return Math.min(window.innerHeight * 0.6, 500);
     }
-    return 700;
+    return 600;
   };
 
   return (
@@ -408,291 +656,327 @@ const PetaDusun = () => {
             Peta Dusun
           </h2>
           
-          {/* PDF Viewer Container */}
+          {/* Map Container */}
           <div className={`
-            flex justify-center
+            w-full
             transition-all duration-700 ease-out
             ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
           `}
           style={{ transitionDelay: '200ms' }}>
-            <div className="group w-full max-w-6xl">
-              <div className="
-                relative bg-white rounded-xl lg:rounded-3xl p-2 lg:p-6 
-                shadow-xl border border-gray-200 overflow-hidden
-                transition-all duration-500 ease-out
-                hover:shadow-2xl hover:border-cyan-300
-              ">
+            <div className="
+              relative bg-white rounded-xl lg:rounded-3xl p-3 lg:p-6 
+              shadow-xl border border-gray-200 overflow-hidden
+              transition-all duration-500 ease-out
+              hover:shadow-2xl hover:border-cyan-300
+              w-full max-w-none
+            ">
 
-                {/* Enhanced Mobile-First Toolbar */}
-                <div className="
-                  flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 lg:mb-4 
-                  p-2 lg:p-3 bg-gray-50 rounded-lg lg:rounded-xl border border-gray-100
-                  gap-2 lg:gap-2
-                ">
-                  <div className="flex items-center space-x-2 w-full sm:w-auto">
-                    <span className="text-xs lg:text-sm font-medium text-gray-700 flex-1 sm:flex-none">
-                      Peta Wilayah Dusun Kalibulus
-                    </span>
-                    {!isMobile && (
-                      <div className="hidden sm:flex items-center space-x-1 text-xs text-gray-500 bg-blue-50 px-2 py-1 rounded-lg">
-                        <span>Ctrl+Scroll untuk zoom</span>
-                      </div>
-                    )}
+              {/* Header - Different layouts for mobile vs desktop */}
+              {isMobile ? (
+                /* Mobile Header Layout */
+                <div className="mb-4 space-y-3">
+                  {/* Title */}
+                  <div className="flex items-center space-x-2 p-3 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border border-blue-100">
+                    <MapPin className="w-5 h-5 text-blue-600" />
+                    <span className="text-sm font-medium text-gray-700">Peta Dusun Kalibulus</span>
                   </div>
                   
-                  <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto space-x-2">
-                    {/* Zoom Controls - More prominent on mobile */}
+                  {/* Controls Row 1: Layer & Zoom */}
+                  <div className="flex items-center space-x-2">
+                    <div className="flex-1 bg-white rounded-lg border border-gray-200 p-1">
+                      <select
+                        value={currentLayer}
+                        onChange={(e) => changeLayer(e.target.value as LayerKey)}
+                        className="w-full text-sm px-3 py-2 border-none bg-transparent focus:outline-none"
+                        disabled={isLoading}
+                      >
+                        {Object.entries(layerOptions).map(([key, layer]) => (
+                          <option key={key} value={key}>
+                            {layer.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
                     <div className="flex items-center space-x-1 bg-white rounded-lg border border-gray-200 p-1">
                       <button
-                        onClick={handleZoomOut}
-                        className="p-2 hover:bg-gray-100 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
-                        disabled={zoom <= 25 || isLoading}
-                        title="Zoom out"
+                        onClick={zoomOut}
+                        className="p-2 hover:bg-gray-100 rounded transition-colors disabled:opacity-50 touch-manipulation"
+                        disabled={isLoading}
+                        title="Perkecil"
                       >
                         <ZoomOut className="w-4 h-4 text-gray-600" />
                       </button>
-                      <span className="text-xs font-medium text-gray-600 px-2 min-w-[40px] lg:min-w-[45px] text-center">
-                        {zoom}%
-                      </span>
                       <button
-                        onClick={handleZoomIn}
-                        className="p-2 hover:bg-gray-100 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
-                        disabled={zoom >= 300 || isLoading}
-                        title="Zoom in"
+                        onClick={zoomIn}
+                        className="p-2 hover:bg-gray-100 rounded transition-colors disabled:opacity-50 touch-manipulation"
+                        disabled={isLoading}
+                        title="Perbesar"
                       >
                         <ZoomIn className="w-4 h-4 text-gray-600" />
                       </button>
                     </div>
+                  </div>
+                  
+                  {/* Controls Row 2: Actions */}
+                  <div className="flex items-center space-x-2">
+                    {kmzLoaded && (
+                      <button
+                        onClick={toggleKMZVisibility}
+                        className={`flex items-center space-x-1 px-3 py-2 rounded-lg border transition-colors touch-manipulation flex-1 justify-center ${
+                          showKMZ 
+                            ? 'bg-green-100 text-green-700 border-green-200' 
+                            : 'bg-gray-100 text-gray-600 border-gray-200'
+                        }`}
+                        title={showKMZ ? 'Sembunyikan Data' : 'Tampilkan Data'}
+                      >
+                        {showKMZ ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                        <span className="text-sm font-medium">
+                          {showKMZ ? 'Sembunyikan' : 'Tampilkan'}
+                        </span>
+                      </button>
+                    )}
+                    
+                    <button
+                      onClick={resetView}
+                      className="flex items-center space-x-1 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg border border-blue-200 transition-colors touch-manipulation flex-1 justify-center"
+                      disabled={isLoading}
+                      title="Reset Tampilan"
+                    >
+                      <Home className="w-4 h-4" />
+                      <span className="text-sm font-medium">Reset</span>
+                    </button>
+                    
+                    <button
+                      onClick={downloadOriginalKMZ}
+                      className="flex items-center space-x-1 px-3 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-colors duration-200 disabled:opacity-50 touch-manipulation flex-1 justify-center"
+                      disabled={isLoading}
+                      title="Download KMZ"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span className="text-sm font-medium">Download</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* Desktop Header Layout */
+                <div className="
+                  flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 lg:mb-6 
+                  p-3 lg:p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg lg:rounded-xl border border-blue-100
+                  gap-3 lg:gap-4
+                ">
+                  <div className="flex items-center space-x-2 w-full sm:w-auto">
+                    <MapPin className="w-5 h-5 text-blue-600" />
+                    <span className="text-sm lg:text-base font-medium text-gray-700 flex-1 sm:flex-none">
+                      Peta Dusun Kalibulus
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto space-x-2 lg:space-x-3">
+                    {/* Layer Selector */}
+                    <div className="flex items-center space-x-1 bg-white rounded-lg border border-gray-200 p-1">
+                      <select
+                        value={currentLayer}
+                        onChange={(e) => changeLayer(e.target.value as LayerKey)}
+                        className="text-sm px-3 py-2 border-none bg-transparent focus:outline-none min-w-0"
+                        disabled={isLoading}
+                      >
+                        {Object.entries(layerOptions).map(([key, layer]) => (
+                          <option key={key} value={key}>
+                            {layer.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-                    {/* Fit Options - Optimized for mobile */}
+                    {/* Zoom Controls */}
                     <div className="flex items-center space-x-1 bg-white rounded-lg border border-gray-200 p-1">
                       <button
-                        onClick={fitToWidth}
-                        className="px-2 lg:px-3 py-2 text-xs hover:bg-gray-100 rounded transition-colors touch-manipulation"
-                        title="Fit to width"
+                        onClick={zoomOut}
+                        className="p-2 lg:p-2.5 hover:bg-gray-100 rounded transition-colors disabled:opacity-50 touch-manipulation"
+                        disabled={isLoading}
+                        title="Perkecil"
                       >
-                        Lebar
+                        <ZoomOut className="w-4 h-4 lg:w-5 lg:h-5 text-gray-600" />
                       </button>
                       <button
-                        onClick={fitToPage}
-                        className="px-2 lg:px-3 py-2 text-xs hover:bg-gray-100 rounded transition-colors touch-manipulation"
-                        title="Fit to page"
+                        onClick={zoomIn}
+                        className="p-2 lg:p-2.5 hover:bg-gray-100 rounded transition-colors disabled:opacity-50 touch-manipulation"
+                        disabled={isLoading}
+                        title="Perbesar"
                       >
-                        {isMobile ? 'Fit' : 'Halaman'}
+                        <ZoomIn className="w-4 h-4 lg:w-5 lg:h-5 text-gray-600" />
                       </button>
                     </div>
 
+                    {/* Action Buttons */}
                     <div className="flex items-center space-x-2">
+                      {/* Toggle KMZ Visibility */}
+                      {kmzLoaded && (
+                        <button
+                          onClick={toggleKMZVisibility}
+                          className={`p-2 lg:p-2.5 rounded-lg border border-gray-200 transition-colors disabled:opacity-50 touch-manipulation ${
+                            showKMZ ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                          }`}
+                          title={showKMZ ? 'Sembunyikan Data' : 'Tampilkan Data'}
+                        >
+                          {showKMZ ? <Eye className="w-4 h-4 lg:w-5 lg:h-5" /> : <EyeOff className="w-4 h-4 lg:w-5 lg:h-5" />}
+                        </button>
+                      )}
+
+                      {/* Reset View Button */}
+                      <button
+                        onClick={resetView}
+                        className="flex items-center space-x-1 lg:space-x-2 px-3 lg:px-4 py-2 lg:py-2.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg border border-blue-200 transition-colors duration-200 disabled:opacity-50 touch-manipulation"
+                        disabled={isLoading}
+                        title="Reset Tampilan"
+                      >
+                        <Home className="w-4 h-4 lg:w-5 lg:h-5" />
+                        <span className="text-sm lg:text-base font-medium hidden sm:inline">Reset</span>
+                      </button>
+
                       {/* Fullscreen Button */}
                       <button
                         onClick={toggleFullscreen}
-                        className="p-2 bg-white hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors disabled:opacity-50 touch-manipulation"
-                        disabled={isLoading || error !== ''}
-                        title="Fullscreen"
+                        className="p-2 lg:p-2.5 bg-white hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors disabled:opacity-50 touch-manipulation"
+                        disabled={isLoading}
+                        title="Layar Penuh"
                       >
-                        <Maximize2 className="w-4 h-4 text-gray-600" />
+                        <Maximize2 className="w-4 h-4 lg:w-5 lg:h-5 text-gray-600" />
                       </button>
 
-                      {/* Download Button - Responsive */}
+                      {/* Download Button */}
                       <button
-                        onClick={handleDownload}
-                        className="flex items-center space-x-1 lg:space-x-2 px-2 lg:px-4 py-2 bg-cyan-600 hover:bg-cyan-700 
-                                 text-white rounded-lg transition-colors duration-200 disabled:opacity-50 touch-manipulation"
+                        onClick={downloadOriginalKMZ}
+                        className="flex items-center space-x-1 lg:space-x-2 px-3 lg:px-4 py-2 lg:py-2.5 bg-cyan-600 hover:bg-cyan-700 
+                                   text-white rounded-lg transition-colors duration-200 disabled:opacity-50 touch-manipulation"
                         disabled={isLoading}
                       >
-                        <Download className="w-4 h-4" />
-                        <span className="text-xs lg:text-sm font-medium hidden sm:inline">Download</span>
+                        <Download className="w-4 h-4 lg:w-5 lg:h-5" />
+                        <span className="text-sm lg:text-base font-medium hidden sm:inline">Download</span>
                       </button>
                     </div>
                   </div>
                 </div>
+              )}
 
-                {/* Enhanced PDF Viewer with Mobile Optimization */}
-                <div className="relative bg-gray-100 rounded-lg lg:rounded-xl border border-gray-200 overflow-hidden">
-                  <div 
-                    ref={scrollContainerRef}
-                    className="relative overflow-auto webkit-overflow-scrolling-touch"
-                    onWheel={handleWheel}
-                    onTouchStart={handleTouchStart}
-                    onTouchMove={handleTouchMove}
-                    onTouchEnd={handleTouchEnd}
-                    style={{ 
-                      height: `${getViewerHeight()}px`,
-                      maxHeight: isMobile ? '70vh' : '85vh',
-                      scrollbarWidth: 'thin',
-                      scrollbarColor: '#9CA3AF #E5E7EB',
-                      WebkitOverflowScrolling: 'touch',
-                      touchAction: 'pan-x pan-y pinch-zoom',
-                      padding: isMobile ? '8px' : '16px' // Padding yang lebih kecil untuk mobile
-                    }}
-                  >
-                    {/* Loading State */}
-                    {isLoading && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
-                        <div className="text-center">
-                          <div className="w-10 lg:w-12 h-10 lg:h-12 border-4 border-cyan-200 border-t-cyan-600 rounded-full animate-spin mx-auto mb-4"></div>
-                          <p className="text-gray-600 text-sm">Memuat peta...</p>
-                        </div>
-                      </div>
-                    )}
+              {/* Map Viewer */}
+              <div className="relative bg-gray-100 rounded-lg lg:rounded-xl border border-gray-200 overflow-hidden">
+                <div 
+                  ref={mapRef}
+                  className="w-full bg-gray-200"
+                  style={{ 
+                    height: `${getViewerHeight()}px`,
+                    minHeight: isMobile ? '400px' : '500px'
+                  }}
+                />
 
-                    {/* Error State */}
-                    {error && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
-                        <div className="text-center px-4">
-                          <div className="w-10 lg:w-12 h-10 lg:h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <X className="w-5 lg:w-6 h-5 lg:h-6 text-red-600" />
-                          </div>
-                          <p className="text-gray-600 text-sm mb-2">Gagal memuat peta</p>
-                          <p className="text-red-500 text-xs mb-4">{error}</p>
-                          <button 
-                            onClick={handleRetry}
-                            className="text-cyan-600 hover:text-cyan-700 text-sm underline touch-manipulation"
-                          >
-                            Coba lagi
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* PDF Canvas Container with Enhanced Mobile Support */}
-                    <div className={`w-full min-h-full transition-all duration-500 ${
-                      !isLoading && !error ? 'opacity-100' : 'opacity-0'
-                    }`}>
-                      {/* Canvas wrapper untuk kontrol positioning yang lebih baik */}
-                      <div 
-                        className="inline-block min-w-full"
-                        style={{
-                          minWidth: 'max-content', // Pastikan container bisa lebih lebar dari parent
-                          textAlign: 'center' // Center canvas di dalam wrapper
-                        }}
-                      >
-                        <canvas
-                          ref={canvasRef}
-                          className="shadow-lg border border-gray-300 bg-white"
-                          style={{
-                            display: !isLoading && !error ? 'block' : 'none',
-                            touchAction: 'manipulation',
-                            margin: '0 auto', // Center canvas
-                            maxWidth: 'none' // Hilangkan pembatasan width
-                          }}
-                        />
-                      </div>
+                {/* Loading State */}
+                {isLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 z-20">
+                    <div className="text-center">
+                      <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+                      <p className="text-gray-700 font-medium">Memuat peta dusun...</p>
                     </div>
-
-                    {/* Mobile Help Text - REMOVED karena mengganggu */}
                   </div>
-                </div>
+                )}
+
+                {/* Desktop Only Controls - Overlay on map (Removed Reset button since it's now in header) */}
+                {!isMobile && (
+                  <div className="absolute top-4 right-4 z-10 flex flex-col space-y-2">
+                    {/* Overlay controls can be added here if needed in the future */}
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Enhanced Fullscreen Modal with Mobile Support */}
-      {isFullscreen && !isLoading && !error && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-95 flex flex-col">
-          {/* Enhanced Fullscreen Toolbar */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 lg:p-4 bg-black bg-opacity-50 gap-2">
-            <div className="flex items-center space-x-2 lg:space-x-4 w-full sm:w-auto">
-              <div className="flex items-center space-x-1 bg-black bg-opacity-50 rounded-lg p-1">
-                <button
-                  onClick={handleZoomOut}
-                  className="p-2 text-white hover:bg-white hover:bg-opacity-20 rounded transition-colors touch-manipulation"
-                  disabled={zoom <= 25}
+      {/* Fullscreen Modal */}
+      {isFullscreen && (
+        <div className="fixed inset-0 z-50 bg-black flex flex-col">
+          {/* Fullscreen Header with Controls */}
+          <div className="flex-shrink-0 flex items-center justify-between p-4 bg-black bg-opacity-50">
+            <div className="flex items-center space-x-4">
+              <h3 className="text-white text-lg font-medium">Peta Dusun Kalibulus</h3>
+              
+              {/* Layer Controls in Fullscreen */}
+              <div className="flex items-center space-x-2">
+                <select
+                  value={currentLayer}
+                  onChange={(e) => changeLayer(e.target.value as LayerKey)}
+                  className="px-3 py-2 bg-white bg-opacity-20 text-white rounded-lg border border-white border-opacity-30 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50"
+                  disabled={isLoading}
                 >
-                  <ZoomOut className="w-4 h-4" />
-                </button>
-                <span className="text-white text-sm px-2 min-w-[40px] lg:min-w-[45px] text-center">
-                  {zoom}%
-                </span>
-                <button
-                  onClick={handleZoomIn}
-                  className="p-2 text-white hover:bg-white hover:bg-opacity-20 rounded transition-colors touch-manipulation"
-                  disabled={zoom >= 300}
-                >
-                  <ZoomIn className="w-4 h-4" />
-                </button>
+                  {Object.entries(layerOptions).map(([key, layer]) => (
+                    <option key={key} value={key} className="text-black">
+                      {layer.name}
+                    </option>
+                  ))}
+                </select>
+                
+                {/* KMZ Toggle in Fullscreen */}
+                {kmzLoaded && (
+                  <button
+                    onClick={toggleKMZVisibility}
+                    className={`p-2 rounded-lg transition-colors ${
+                      showKMZ 
+                        ? 'bg-green-500 bg-opacity-80 text-white' 
+                        : 'bg-white bg-opacity-20 text-white'
+                    }`}
+                    title={showKMZ ? 'Sembunyikan Data' : 'Tampilkan Data'}
+                  >
+                    {showKMZ ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                  </button>
+                )}
               </div>
-              
-              <button
-                onClick={fitToWidth}
-                className="px-2 lg:px-3 py-2 bg-black bg-opacity-50 text-white hover:bg-opacity-70 rounded-lg transition-colors text-sm touch-manipulation"
-              >
-                {isMobile ? 'Lebar' : 'Fit Lebar'}
-              </button>
-              
-              <button
-                onClick={fitToPage}
-                className="px-2 lg:px-3 py-2 bg-black bg-opacity-50 text-white hover:bg-opacity-70 rounded-lg transition-colors text-sm touch-manipulation"
-              >
-                {isMobile ? 'Fit' : 'Fit Halaman'}
-              </button>
             </div>
 
+            {/* Close Button */}
             <button
               onClick={toggleFullscreen}
-              className="p-3 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-full transition-all duration-200 self-end sm:self-auto touch-manipulation"
-              title="Tutup fullscreen (ESC)"
+              className="p-3 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-full transition-all duration-200 border border-white border-opacity-30 hover:border-opacity-50"
+              title="Tutup fullscreen"
             >
-              <X className="w-5 lg:w-6 h-5 lg:h-6" />
+              <X className="w-6 h-6" />
             </button>
           </div>
 
-          {/* Enhanced Fullscreen PDF Container */}
-          <div 
-            className="flex-1 overflow-auto webkit-overflow-scrolling-touch"
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-            style={{ 
-              scrollbarWidth: 'thin',
-              scrollbarColor: '#4B5563 #1F2937',
-              WebkitOverflowScrolling: 'touch',
-              touchAction: 'pan-x pan-y pinch-zoom'
-            }}
+          {/* Fullscreen Map Container */}
+          <div
+            ref={fullscreenMapRef}
+            className="flex-1 w-full bg-gray-900"
+            style={{ minHeight: 0 }}
           >
-            <div className="flex items-start justify-center min-h-full p-2 lg:p-4">
-              {/* Canvas wrapper dengan kontrol yang lebih baik untuk fullscreen */}
-              <div 
-                className="inline-block"
-                style={{
-                  minWidth: 'max-content',
-                  textAlign: 'center'
-                }}
-              >
-                <canvas
-                  className="shadow-2xl border border-gray-600"
-                  style={{ 
-                    touchAction: 'manipulation',
-                    margin: '0 auto',
-                    maxWidth: 'none'
-                  }}
-                  ref={(canvas) => {
-                    if (canvas && canvasRef.current) {
-                      const ctx = canvas.getContext('2d');
-                      if (ctx && canvasRef.current) {
-                        canvas.width = canvasRef.current.width;
-                        canvas.height = canvasRef.current.height;
-                        canvas.style.width = canvasRef.current.style.width;
-                        canvas.style.height = canvasRef.current.style.height;
-                        ctx.drawImage(canvasRef.current, 0, 0);
-                      }
-                    }
-                  }}
-                />
-              </div>
-            </div>
+            {/* Map will be moved here */}
           </div>
 
-          {/* Enhanced Help text for Mobile */}
-          <div className="p-3 lg:p-4 bg-black bg-opacity-50 text-center">
-            <p className="text-white text-xs lg:text-sm">
-              {isMobile 
-                ? "Ketuk X untuk keluar • Pinch untuk zoom • Geser untuk navigasi"
-                : "ESC untuk keluar • Ctrl+Scroll untuk zoom • Scrollbar untuk navigasi"
-              }
-            </p>
+          {/* Fullscreen Controls Overlay */}
+          <div className="absolute bottom-4 left-4 right-4 flex justify-center pointer-events-none">
+            <div className="flex items-center space-x-2 bg-black bg-opacity-50 rounded-lg p-2 pointer-events-auto">
+              <button
+                onClick={zoomOut}
+                className="p-2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded transition-colors"
+                title="Perkecil"
+              >
+                <ZoomOut className="w-5 h-5" />
+              </button>
+              <button
+                onClick={resetView}
+                className="p-2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded transition-colors"
+                title="Reset Tampilan"
+              >
+                <Home className="w-5 h-5" />
+              </button>
+              <button
+                onClick={zoomIn}
+                className="p-2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded transition-colors"
+                title="Perbesar"
+              >
+                <ZoomIn className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -700,4 +984,4 @@ const PetaDusun = () => {
   );
 };
 
-export default PetaDusun;
+export default PetaDusunInteraktif;
